@@ -1,0 +1,9 @@
+{
+  "name": "Flashcards",
+  "short_name": "Cards",
+  "start_url": "/flashcards",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": []
+}

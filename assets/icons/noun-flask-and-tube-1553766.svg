@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 80 80">
+  <!-- Generator: Adobe Illustrator 29.8.1, SVG Export Plug-In . SVG Version: 2.1.1 Build 2)  -->
+  <defs>
+    <style>
+      .st0 {
+        font-family: HelveticaNeue-Bold, 'Helvetica Neue';
+        font-size: 5px;
+        font-weight: 700;
+        isolation: isolate;
+      }
+    </style>
+  </defs>
+  <path d="M69,23c-1.1,0-2,.9-2,2v9h-7v-10h.5c1.1,0,2-.9,2-2s-.9-2-2-2h-5.5v-5c0-3.31-2.69-6-6-6h-18c-3.31,0-6,2.69-6,6v5h-5.5c-1.1,0-2,.9-2,2s.9,2,2,2h.5v26.58l-5.33,12c-.62,1.4-.68,2.98-.17,4.42h-3.5c-1.1,0-2,.9-2,2s.9,2,2,2h58c1.1,0,2-.9,2-2V25c0-1.1-.9-2-2-2ZM50,46h6v7c0,1.66-1.34,3-3,3s-3-1.34-3-3v-7ZM56,42h-6v-18h6v18ZM30,24v10h-6v-10h6ZM20.16,67c-1.1,0-2-.89-2-2,0-.28.06-.56.17-.81l5.5-12.38c.11-.26.17-.53.17-.81v-13h6v13c0,.28.06.55.17.81l5.5,12.38c.45,1.01,0,2.19-1.02,2.64-.26.11-.53.17-.81.17h-13.68ZM67,67h-27.5c.51-1.45.45-3.04-.17-4.44l-5.33-11.98v-26.58h.5c1.1,0,2-.9,2-2s-.9-2-2-2h-5.5v-5c0-1.1.9-2,2-2h18c1.1,0,2,.9,2,2v5h-5.5c-1.1,0-2,.9-2,2s.9,2,2,2h.5v10h-3c-1.1,0-2,.9-2,2s.9,2,2,2h3v15c0,3.87,3.13,7,7,7s7-3.13,7-7v-15h7v29Z"/>
+  <text class="st0" transform="translate(0 95)"><tspan x="0" y="0">Created by Weltenraser</tspan></text>
+  <text class="st0" transform="translate(0 100)"><tspan x="0" y="0">from the Noun Project</tspan></text>
+</svg>

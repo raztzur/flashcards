@@ -1,0 +1,13 @@
+Title: מולקולרית
+
+----
+
+Icon: flask
+
+----
+
+Gradient: linear-gradient(135deg,#fff3e0,#ffcc80)
+
+----
+
+Uuid: xc1yiatvxsd7knzq
