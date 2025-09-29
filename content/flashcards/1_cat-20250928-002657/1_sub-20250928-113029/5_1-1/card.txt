@@ -1,0 +1,29 @@
+Title: המיטוכונדריה בצבע {{1}} ועושה קקי {{2}}
+
+----
+
+Type: cloze
+
+----
+
+Question: <p>המיטוכונדריה בצבע {{1}} ועושה קקי {{2}}</p>
+
+----
+
+Answer: {"type":"cloze","blanks":[{"id":1,"answers":["חציל"],"ignoreCase":true,"trim":true,"regex":false},{"id":2,"answers":["אציל"],"ignoreCase":true,"trim":true,"regex":false}]}
+
+----
+
+Box: 3
+
+----
+
+Seen: 0
+
+----
+
+Correct: 0
+
+----
+
+Uuid: obvk4suq62lc3owm

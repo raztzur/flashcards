@@ -1,0 +1,94 @@
+title: Flashcard
+icon: 🃏
+
+tabs:
+  content:
+    label: Content
+    columns:
+      - width: 1/2
+        sections:
+          basic:
+            type: fields
+            fields:
+              title:
+                type: text
+                label: Card Title
+                required: true
+                help: Brief description of this card. For cloze questions, use {{1}}, {{2}}, etc. - they will display as ____ in lists.
+                
+              type:
+                type: select
+                label: Question Type
+                required: true
+                default: free
+                options:
+                  free: Free Text Answer
+                  mc: Multiple Choice
+                  tf: True/False
+                  cloze: Fill in the Blanks (Cloze)
+                help: Choose the type of question for this card
+                
+              question:
+                type: textarea
+                label: Question
+                required: true
+                help: |
+                  The question text. For cloze questions, use {{1}}, {{2}}, etc. for blanks.
+                  HTML is supported.
+                
+      - width: 1/2
+        sections:
+          answer:
+            type: fields
+            fields:
+              answer:
+                type: textarea
+                label: Answer
+                required: true
+                help: |
+                  **Free text**: The correct answer text (HTML supported)
+                  **Multiple Choice**: JSON format: {"correct": 1, "options": ["option1", "option2", "option3"]}
+                  **True/False**: true or false
+                  **Cloze**: JSON format: {"type":"cloze","blanks":[{"id":1,"answers":["answer1"]}, {"id":2,"answers":["answer2"]}]}
+                
+  preview:
+    label: Preview
+    sections:
+      preview:
+        type: info
+        headline: Card Preview
+        text: |
+          **Title:** {{ page.displayTitle }}
+          
+          **Type:** {{ page.type.or('free') }}
+          
+          **Question:** 
+          {{ page.question.kirbytext }}
+          
+          **Answer:** 
+          {{ page.answer.excerpt(200) }}
+          
+  settings:
+    label: Settings  
+    sections:
+      metadata:
+        type: fields
+        fields:
+          difficulty:
+            type: select
+            label: Difficulty Level
+            options:
+              easy: Easy
+              medium: Medium
+              hard: Hard
+            default: medium
+            
+          tags:
+            type: tags
+            label: Tags
+            help: Add tags to organize cards
+            
+          notes:
+            type: textarea
+            label: Notes
+            help: Internal notes about this card

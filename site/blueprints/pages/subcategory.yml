@@ -1,0 +1,40 @@
+title: Flashcard Subcategory
+icon: 📁
+
+columns:
+  - width: 2/3
+    sections:
+      pages:
+        type: pages
+        headline: Flashcards
+        template: card
+        info: "{{ page.type.or('free') }}: {{ page.displayTitle.excerpt(50) }}"
+        sortBy: title asc
+        
+  - width: 1/3
+    sections:
+      subcategory:
+        type: fields
+        fields:
+          title:
+            type: text
+            label: Subcategory Name
+            required: true
+            
+          description:
+            type: textarea
+            label: Description
+            
+      stats:
+        type: stats
+        reports:
+          - label: Total Cards
+            query: page.children
+          - label: Free Text Cards
+            query: page.children.filterBy('type', 'free')
+          - label: Multiple Choice Cards
+            query: page.children.filterBy('type', 'mc')
+          - label: True/False Cards
+            query: page.children.filterBy('type', 'tf')
+          - label: Cloze Cards
+            query: page.children.filterBy('type', 'cloze')

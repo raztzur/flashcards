@@ -1,0 +1,29 @@
+Title: עוד שאלת נסיון
+
+----
+
+Type: tf
+
+----
+
+Question: <p>Ran הוא חלבון ממשפחת ה-הGTP-ase</p>
+
+----
+
+Answer: {"type":"tf","value":true}
+
+----
+
+Box: 3
+
+----
+
+Seen: 0
+
+----
+
+Correct: 0
+
+----
+
+Uuid: fxfspsfewofjmmct

@@ -1,0 +1,29 @@
+Title: מי הזמר של האסלות?
+
+----
+
+Type: mc
+
+----
+
+Question: <p>מי הזמר של האסלות?</p>
+
+----
+
+Answer: {"type":"mc","options":[{"text":"מר קקי","correct":false},{"text":"מיסטר קקי","correct":false},{"text":"חרא בלבן","correct":false},{"text":"אלי לוזון","correct":true}]}
+
+----
+
+Box: 3
+
+----
+
+Seen: 0
+
+----
+
+Correct: 0
+
+----
+
+Uuid: vtday2exwuplepd9

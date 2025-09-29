@@ -1,7 +1,15 @@
-<img src="http://getkirby.com/assets/images/github/plainkit.jpg" width="300">
+# 📚 Flashcards System - מערכת כרטיסי לימוד
 
-**Kirby: the CMS that adapts to any project, loved by developers and editors alike.**
-The Plainkit is a minimal Kirby setup with the basics you need to start a project from scratch. It is the ideal choice if you are already familiar with Kirby and want to start step-by-step.
+מערכת כרטיסי לימוד מתקדמת בעברית עם אלגוריתם חזרה מרווחת, בנויה על Kirby CMS.
+
+## ✨ תכונות
+
+- **4 סוגי שאלות**: שאלות פתוחות, בחירה מרובה, נכון/לא נכון, השלמה (Cloze)
+- **ממשק בעברית** עם תמיכה מלאה ב-RTL
+- **אלגוריתם חזרה מרווחת** לשיפור הזיכרון
+- **ניהול תוכן חזותי** דרך פאנל האדמין
+- **מעקב התקדמות** מפורט
+- **ארגון היררכי**: קטגוריות ← תת-קטגוריות ← כרטיסים
 
 You can learn more about Kirby at [getkirby.com](https://getkirby.com).
 

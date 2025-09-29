@@ -1,0 +1,33 @@
+title: Flashcards System
+icon: 📚
+
+columns:
+  - width: 2/3
+    sections:
+      pages:
+        type: pages
+        headline: Categories
+        template: category
+        info: "{{ page.children.count }} subcategories"
+        sortBy: title asc
+        
+  - width: 1/3
+    sections:
+      info:
+        type: info
+        headline: System Info
+        text: |
+          This is the main flashcards system page.
+          
+          **Structure:**
+          - Categories contain subcategories
+          - Subcategories contain individual flashcards
+          - Each flashcard can be: free text, multiple choice, true/false, or cloze
+      
+      stats:
+        type: stats
+        reports:
+          - label: Total Categories
+            query: page.children
+          - label: Total Cards
+            query: page.index.filterBy('template', 'card')

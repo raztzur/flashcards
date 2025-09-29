@@ -1,0 +1,29 @@
+Title: המיטוכונדריה מאוד {{1}} ועושה בלאגן ב{{2}}
+
+----
+
+Type: cloze
+
+----
+
+Question: <p>המיטוכונדריה מאוד {{1}} ועושה בלאגן ב{{2}}</p>
+
+----
+
+Answer: {"type":"cloze","blanks":[{"id":1,"answers":["מלוחה"],"ignoreCase":true,"trim":true,"regex":false},{"id":2,"answers":["בטן"],"ignoreCase":true,"trim":true,"regex":false}]}
+
+----
+
+Box: 3
+
+----
+
+Seen: 0
+
+----
+
+Correct: 0
+
+----
+
+Uuid: nvuwrj9rwvsshest

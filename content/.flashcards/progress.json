@@ -22,5 +22,75 @@
         "correct": 0,
         "box": 2,
         "updatedAt": "2025-09-27T23:36:12+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card": {
+        "seen": 5,
+        "correct": 2,
+        "box": 4,
+        "updatedAt": "2025-09-29T07:57:41+00:00",
+        "easiness": 2.42,
+        "interval": 1,
+        "repetitions": 1,
+        "dueAt": "2025-09-30T07:57:41+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/1-1": {
+        "seen": 10,
+        "correct": 6,
+        "box": 5,
+        "updatedAt": "2025-09-28T23:01:54+00:00",
+        "easiness": 2.8200000000000003,
+        "interval": 16,
+        "repetitions": 3,
+        "dueAt": "2025-10-14T23:01:54+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-2": {
+        "seen": 7,
+        "correct": "0",
+        "box": 4,
+        "updatedAt": "2025-09-29T07:57:34+00:00",
+        "easiness": 1.66,
+        "interval": 11,
+        "repetitions": 3,
+        "dueAt": "2025-10-10T07:57:34+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-1": {
+        "seen": 4,
+        "correct": 3,
+        "box": 5,
+        "updatedAt": "2025-09-28T23:01:21+00:00",
+        "easiness": 2.8000000000000003,
+        "interval": 1,
+        "repetitions": 1,
+        "dueAt": "2025-09-29T23:01:21+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/cshev-nbsp": {
+        "seen": 5,
+        "correct": 2,
+        "box": 5,
+        "updatedAt": "2025-09-29T07:57:45+00:00",
+        "easiness": 2.42,
+        "interval": 6,
+        "repetitions": 2,
+        "dueAt": "2025-10-05T07:57:45+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/1": {
+        "seen": 4,
+        "correct": 2,
+        "box": 5,
+        "updatedAt": "2025-09-28T23:01:35+00:00",
+        "easiness": 2.42,
+        "interval": 35,
+        "repetitions": 4,
+        "dueAt": "2025-11-02T23:01:35+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-3": {
+        "seen": 3,
+        "correct": 2,
+        "box": 5,
+        "updatedAt": "2025-09-28T23:00:39+00:00",
+        "easiness": 2.7,
+        "interval": 6,
+        "repetitions": 2,
+        "dueAt": "2025-10-04T23:00:39+00:00"
     }
 }

@@ -1,0 +1,54 @@
+# Kirby CMS - Files to ignore
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Content that shouldn't be tracked (optional - depends on your needs)
+# Uncomment the next line if you don't want to track content
+# content/
+
+# Media files (if too large)
+# media/
+
+# Site cache
+site/cache/
+
+# Session files  
+site/sessions/
+
+# User accounts (for security)
+site/accounts/
+
+# Configuration files with sensitive data
+# site/config/config.php
+
+# Progress data
+content/.flashcards/
+
+# Local development files
+.env
+.env.local
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Node modules (if using any build tools)
+node_modules/
+npm-debug.log*
+
+# Composer
+# vendor/ (uncomment if not tracking vendor folder)
+
+# Panel dist (if developing panel)
+panel/dist/
+
+# Assets cache
+assets/cache/

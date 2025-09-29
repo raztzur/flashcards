@@ -1,0 +1,34 @@
+title: Flashcard Category
+icon: 📂
+
+columns:
+  - width: 2/3
+    sections:
+      pages:
+        type: pages
+        headline: Subcategories
+        template: subcategory
+        info: "{{ page.children.count }} cards"
+        sortBy: title asc
+        
+  - width: 1/3
+    sections:
+      category:
+        type: fields
+        fields:
+          title:
+            type: text
+            label: Category Name
+            required: true
+            
+          description:
+            type: textarea
+            label: Description
+            
+      stats:
+        type: stats
+        reports:
+          - label: Subcategories
+            query: page.children
+          - label: Total Cards
+            query: page.index.filterBy('template', 'card')

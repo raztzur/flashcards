@@ -44,57 +44,52 @@ foreach ($easeVals as $ef){
 }
 unset($b);
 ?>
-<!doctype html>
-<html lang="he" dir="rtl">
+<!doctype html><html lang="he" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>סטטיסטיקות</title>
-  <style>
-    :root{ --stroke:#000; --bg:#fff; --fg:#000; --muted:#666; }
-    *{ box-sizing:border-box; }
-    html,body{ margin:0; padding:0; background:#fff; color:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto; }
-    .container{ padding:16px; max-width:1100px; margin:0 auto; }
-    .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-    .btn{ border:1px solid var(--stroke); border-radius:12px; padding:8px 12px; background:#fff; cursor:pointer; text-decoration:none; color:#000; }
-    .panel{ border:1px solid var(--stroke); border-radius:16px; padding:12px; margin:12px 0; }
-    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .kpi{ display:flex; gap:8px; align-items:center; border:1px solid var(--stroke); border-radius:10px; padding:6px 10px; background:#fff; }
-    .charts{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
-    @media (max-width:900px){ .charts{ grid-template-columns: 1fr; } }
-    canvas{ width:100%; height:300px; border:1px solid var(--stroke); border-radius:12px; background:#fff; }
-    .muted{ color:var(--muted); }
-  </style>
-</head>
-<body>
-  <main class="container">
-    <header class="topbar">
-      <h1>סטטיסטיקות</h1>
-      <nav><a class="btn" href="<?= url('flashcards') ?>">← חזרה</a></nav>
-    </header>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>סטטיסטיקות</title><?= snippet('global-head') ?>
+</head><body><main class="container">
 
-    <section class="panel">
-      <div class="row">
-        <div class="kpi">סה״כ כרטיסים: <strong><?= $totalCards ?></strong></div>
-        <div class="kpi" title="EF — גבוה=קל">מדד קלות ממוצע: <strong><?= $avgEase ?></strong></div>
-        <div class="kpi">נסקרו היום: <strong><?= $reviewedToday ?></strong></div>
-        <div class="kpi">נכונים היום: <strong><?= $correctToday ?></strong></div>
-      </div>
-    </section>
+<header class="topbar">
+  <h1>סטטיסטיקות</h1>
+  <nav class="nav"><a class="btn" href="<?= url('flashcards') ?>">← חזרה</a></nav>
+</header>
 
-    <section class="charts">
-      <div class="panel">
-        <h3 style="margin:0 0 8px 0;">התפלגות “מדד הקלות” (EF)</h3>
-        <canvas id="efChart" width="600" height="300"></canvas>
-        <p class="muted">גבוה=קל — עוזר לזהות באיזה טווחים רוב הכרטיסים שלך נמצאים.</p>
-      </div>
-      <div class="panel">
-        <h3 style="margin:0 0 8px 0;">חלוקה לפי רמת תיבה (Box 1–5)</h3>
-        <canvas id="boxChart" width="600" height="300"></canvas>
-        <p class="muted">Box נמוך = צריך יותר תרגול; Box גבוה = שולט.</p>
-      </div>
-    </section>
-  </main>
+<section class="stats-filters">
+  <button class="btn small" aria-pressed="true">היום</button>
+  <button class="btn small">7 ימים</button>
+  <button class="btn small">30 ימים</button>
+</section>
+
+<section class="stats-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">כרטיסים נסקרו</div>
+    <div class="kpi-value">34</div>
+    <div class="kpi-trend">+12% מהשבוע שעבר</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">דיוק</div>
+    <div class="kpi-value">78%</div>
+    <div class="kpi-trend">-3% מהיום</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">לתרגול היום</div>
+    <div class="kpi-value">18</div>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:16px">
+  <table class="stats-table">
+    <thead><tr>
+      <th>קטגוריה</th><th>תתי־קטגוריות</th><th>כרטיסים</th><th>דיוק</th><th>Due</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>ביוכימיה</td><td>5</td><td>120</td><td><span class="badge">82%</span></td><td>9</td></tr>
+      <tr><td>פיזיולוגיה</td><td>3</td><td>73</td><td><span class="badge">75%</span></td><td>6</td></tr>
+    </tbody>
+  </table>
+</section>
+</main>
 
   <script>
     // נתונים מה-PHP

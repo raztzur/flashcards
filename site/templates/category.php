@@ -1,157 +1,139 @@
-<?php
-/** @var Kirby\Cms\Page $page */
-use Kirby\Toolkit\F;
-
-header('Content-Type: text/html; charset=utf-8');
-
-$cards = $page->children()->filterBy('intendedTemplate', 'card');
-
-// progress
-$storage = kirby()->root('content') . '/.flashcards';
-if (!is_dir($storage)) { @mkdir($storage, 0775, true); }
-$progressFile = $storage . '/progress.json';
-$progress = file_exists($progressFile) ? json_decode(F::read($progressFile), true) : [];
-
-$total = $cards->count();
-$due = 0; $seen=0; $correct=0; $avgEase=0; $eCount=0; $todayReviewed=0;
-$today = date('Y-m-d');
-
-foreach ($cards as $c) {
-  $id = $c->id();
-  $row = $progress[$id] ?? null;
-  if ($row) {
-    if (!empty($row['dueAt']) && strtotime($row['dueAt']) <= time()) $due++;
-    $seen += (int)($row['seen'] ?? 0);
-    $correct += (int)($row['correct'] ?? 0);
-    if (isset($row['easiness'])) { $avgEase += (float)$row['easiness']; $eCount++; }
-    if (!empty($row['updatedAt']) && date('Y-m-d', strtotime($row['updatedAt'])) === $today) $todayReviewed++;
-  }
-}
-$avgEase = $eCount ? round($avgEase/$eCount,2) : 2.5;
-
-function cardLevel(array $row): string {
-  $b = (int)($row['box'] ?? 3);
-  if ($b >= 4) return 'high';
-  if ($b >= 2) return 'mid';
-  return 'low';
-}
-?>
+<?php /** @var Kirby\Cms\Page $page */ ?>
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?= html($page->title()) ?> — קטגוריה</title>
-  <style>
-    :root{ --stroke:#000; --bg:#fff; --fg:#000; --radius:16px; --muted:#666; }
-    *{ box-sizing:border-box; }
-    html,body{ margin:0; padding:0; background:var(--bg); color:var(--fg);
-      font-family:system-ui, -apple-system, Segoe UI, Roboto; }
-    .container{ padding:16px; max-width:1100px; margin:0 auto; }
-    .topbar{ display:flex; gap:12px; align-items:center; justify-content:space-between; }
-    .nav{ display:flex; gap:8px; flex-wrap:wrap; }
-    .btn{ border:1px solid var(--stroke); border-radius:12px; padding:8px 12px; background:#fff; cursor:pointer; text-decoration:none; color:#000; }
-    .panel{ border:1px solid var(--stroke); border-radius:16px; padding:12px; margin-top:12px; }
-    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .meter{ width:18px; height:18px; border-radius:50%; border:1px solid var(--stroke); background:#eee; }
-    .meter[data-level="low"]{ background:#ffd6d6; }
-    .meter[data-level="mid"]{ background:#fff4c2; }
-    .meter[data-level="high"]{ background:#d6ffd9; }
-    .list{ display:grid; gap:8px; margin-top:12px; }
-    .item{ display:grid; grid-template-columns: 1fr auto auto; gap:8px; align-items:center;
-      border:1px solid var(--stroke); border-radius:12px; padding:10px; }
-    .muted{ color:var(--muted); }
-    @media (max-width:720px){ .item{ grid-template-columns: 1fr auto; } }
-    .btn.icon{ padding:6px; display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; }
-    svg{ width:18px; height:18px; }
-  </style>
+  <?= snippet('global-head') ?>
 </head>
 <body>
-  <main class="container">
-    <header class="topbar">
-      <div class="row">
-        <a class="btn" href="<?= url('flashcards') ?>">← חזרה</a>
-        <h1 style="margin:0;"><?= html($page->title()) ?></h1>
-      </div>
-      <nav class="nav">
-        <a class="btn" href="<?= url('flashcards/add') . '?category=' . urlencode($page->slug()) ?>">הוסף שאלה</a>
-        <a class="btn" href="<?= url('flashcards/test') . '?category=' . urlencode($page->slug()) . '&auto=1' ?>">מבחן בקטגוריה</a>
-      </nav>
-    </header>
+<main class="container">
+  <header class="topbar">
+    <h1><?= html($page->title()) ?></h1>
+    <nav class="nav">
+      <a href="<?= url('flashcards') ?>" class="btn">← חזרה</a>
+      <a href="<?= url('flashcards/test') . '?category=' . urlencode($page->slug()) . '&auto=1' ?>" class="btn">מבחן בקטגוריה</a>
+    </nav>
+  </header>
 
-    <section class="panel">
-      <h3 style="margin:0 0 8px 0;">סטטיסטיקות קטגוריה</h3>
-      <div class="row">
-        <div class="btn">כרטיסים: <strong><?= $total ?></strong></div>
-        <div class="btn">Due היום: <strong><?= $due ?></strong></div>
-        <div class="btn">ניסיונות מצטבר: <strong><?= $seen ?></strong></div>
-        <div class="btn">נכונים מצטבר: <strong><?= $correct ?></strong></div>
-        <div class="btn" title="EF — גבוה=קל">מדד קלות ממוצע: <strong><?= $avgEase ?></strong></div>
-        <div class="btn">נסקרו היום: <strong><?= $todayReviewed ?></strong></div>
+  <!-- טופס נגלל להוספת תת-קטגוריה -->
+  <section class="panel" id="subFormPanel" style="display:none;">
+    <form id="subForm" class="row" action="<?= url('subcats/add') ?>" method="post">
+      <div class="field" style="min-width:220px;">
+        <label for="subTitle">שם תת־קטגוריה</label>
+        <input type="text" id="subTitle" name="title" placeholder="למשל: מיטוכונדריה" required>
       </div>
+      <button type="submit" class="btn">הוסף</button>
+      <button type="button" class="btn ghost" id="subFormCancel">בטל</button>
+      <div id="subMsg" class="muted"></div>
+    </form>
+  </section>
 
-      <div class="list" id="cardsList">
-        <?php if ($total === 0): ?>
-          <p class="muted">אין כרטיסיות בקטגוריה זו עדיין.</p>
-        <?php else: ?>
-          <?php foreach ($cards as $c): ?>
-            <?php
-              $id = $c->id();
-              $row = $progress[$id] ?? [
-                'seen' => (int)$c->seen()->or(0)->value(),
-                'correct' => (int)$c->correct()->or(0)->value(),
-                'box' => (int)$c->box()->or(3)->value(),
-              ];
-              $clevel = (function($row){ $b=(int)($row['box']??3); return $b>=4?'high':($b>=2?'mid':'low'); })($row);
-              $qhtml = $c->question()->kirbytext()->value();
-              $qtext = strip_tags($qhtml);
-              if (mb_strlen($qtext) > 140) $qtext = mb_substr($qtext, 0, 140) . '…';
-            ?>
-            <div class="item" data-id="<?= html($id) ?>">
-              <div><?= $qtext !== '' ? html($qtext) : '<em class="muted">—</em>' ?></div>
-              <div class="meter" data-level="<?= $clevel ?>"></div>
-              <div class="row">
-                <a class="btn icon" href="<?= url('flashcards/add') . '?category=' . urlencode($page->slug()) . '&edit=' . urlencode($id) ?>" title="עריכה">✎</a>
-                <button class="btn icon" data-del title="מחיקה">🗑️</button>
-              </div>
+  <section class="panel">
+    <div class="row" style="justify-content:space-between;">
+      <h3 style="margin:0">תתי־קטגוריות</h3>
+      <button class="btn" id="toggleSubForm">+ הוסף תת־קטגוריה</button>
+    </div>
+    <div class="grid" id="subGrid">
+      <?php 
+        $subs = $page->children()->filterBy('intendedTemplate','subcategory');
+        foreach ($subs as $sub): 
+          $cards = $sub->children()->filterBy('intendedTemplate','card');
+          $count = $cards->count();
+          $href  = url($page->url() . '/' . $sub->slug());
+      ?>
+      <div class="card" data-sub="<?= html($sub->slug()) ?>">
+        <div class="card-top">
+          <div class="card-top-left">
+            <div class="iconwrap" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" stroke="currentColor" fill="none"/></svg>
             </div>
-          <?php endforeach; ?>
-        <?php endif; ?>
+            <div class="meta">
+              <div class="title"><a href="<?= $href ?>"><?= html($sub->title()) ?></a></div>
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn icon ghost" 
+               href="<?= url('flashcards/add') . '?category=' . urlencode($page->slug()) . '&subcategory=' . urlencode($sub->slug()) ?>" 
+               title="הוסף שאלה">＋</a>
+            <button class="btn icon ghost" data-edit title="עריכה">✎</button>
+            <button class="btn icon ghost" data-delete title="מחיקה">🗑️</button>
+          </div>
+        </div>
+        <div class="card-bottom">
+          <div class="sub"><span><?= $count ?> כרטיסיות</span></div>
+          <a class="btn icon ghost testbtn"
+             href="<?= url('flashcards/test') . '?category=' . urlencode($page->slug()) . '&subcategory=' . urlencode($sub->slug()) . '&auto=1' ?>"
+             title="מבחן בתת־קטגוריה">▶</a>
+        </div>
+
+        <!-- עריכה inline -->
+        <div class="editrow" data-editrow>
+          <input type="text" class="pill" data-name placeholder="שם תת־קטגוריה" value="<?= html($sub->title()) ?>" />
+          <button class="btn" data-save>שמור</button>
+          <button class="btn ghost" data-cancel>בטל</button>
+        </div>
       </div>
-    </section>
-  </main>
+      <?php endforeach; ?>
+    </div>
+  </section>
+</main>
 
-  <script>
-    async function api(path, opts){
-      try{
-        const r = await fetch(path, opts);
-        const t = await r.text();
-        try { return JSON.parse(t); } catch { return { ok:false, error: t || r.statusText || ('HTTP '+r.status) }; }
-      } catch(e){ return { ok:false, error: e.message || 'Network error' }; }
-    }
-    async function deleteCard(id){
-      return api('/cards/delete', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ id })
-      });
-    }
+<script>
+  async function postJSON(url, payload){
+    try{
+      const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const t = await r.text(); try{ return JSON.parse(t);}catch{return {ok:false,error:t||r.statusText||('HTTP '+r.status)}}
+    }catch(e){ return {ok:false,error:e.message||'Network error'} }
+  }
 
-    document.querySelectorAll('[data-del]').forEach(btn => {
-      let armed = false, timer = null;
-      const disarm = () => { armed=false; btn.classList.remove('danger'); btn.textContent='🗑️'; if (timer){ clearTimeout(timer); timer=null; } };
-      btn.addEventListener('click', async () => {
-        const row = btn.closest('.item');
-        const id = row?.getAttribute('data-id');
-        if (!id) return;
-        if (!armed){ armed=true; btn.classList.add('danger'); btn.textContent='בטוח?'; timer=setTimeout(disarm,3000); return; }
-        btn.disabled = true;
-        const del = await deleteCard(id);
-        if (!del.ok){ alert('שגיאה במחיקה: ' + (del.error || 'unknown')); btn.disabled=false; disarm(); return; }
-        row.remove();
-      });
-      document.addEventListener('click', (ev)=>{ if (!btn.contains(ev.target)) disarm(); });
+  // טוגל טופס
+  const subPanel = document.getElementById('subFormPanel');
+  document.getElementById('toggleSubForm')?.addEventListener('click', ()=>{
+    subPanel.style.display = (subPanel.style.display==='none'||!subPanel.style.display) ? 'block' : 'none';
+  });
+  document.getElementById('subFormCancel')?.addEventListener('click', ()=> subPanel.style.display='none');
+
+  // שליחת טופס
+  document.getElementById('subForm')?.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const title = (document.getElementById('subTitle').value||'').trim();
+    const msg = document.getElementById('subMsg');
+    if(!title){ msg.textContent='נא להזין שם'; return; }
+    msg.textContent = 'שומר…';
+    const res = await postJSON('<?= url('subcats/add') ?>', { category: '<?= $page->slug() ?>', title });
+    if(!res.ok){ msg.textContent='שגיאה: '+(res.error||''); return; }
+    location.reload();
+  });
+
+  // עריכה/מחיקה לכל תת-קטגוריה
+  document.querySelectorAll('[data-sub]').forEach(row=>{
+    const slug = row.getAttribute('data-sub');
+    const editBtn=row.querySelector('[data-edit]');
+    const delBtn =row.querySelector('[data-delete]');
+    const editRow=row.querySelector('[data-editrow]');
+    const nameIn =row.querySelector('[data-name]');
+
+    editBtn.addEventListener('click', ()=> editRow.classList.toggle('show'));
+    editRow.querySelector('[data-cancel]').addEventListener('click', ()=> editRow.classList.remove('show'));
+    editRow.querySelector('[data-save]').addEventListener('click', async ()=>{
+      const title=(nameIn.value||'').trim(); if(!title){ nameIn.focus(); return; }
+      const res = await postJSON('<?= url('subcats/update') ?>', { category:'<?= $page->slug() ?>', slug, title });
+      if(!res.ok){ alert('שגיאה: '+(res.error||'')); return; }
+      location.reload();
     });
-  </script>
+
+    let armed=false, timer=null;
+    function disarm(){ armed=false; delBtn.classList.remove('danger'); delBtn.textContent='🗑️'; if (timer){ clearTimeout(timer); timer=null; } }
+    delBtn.addEventListener('click', async ()=>{
+      if (!armed){ armed=true; delBtn.classList.add('danger'); delBtn.textContent='בטוח?'; timer=setTimeout(disarm,3000); return; }
+      const res = await postJSON('<?= url('subcats/delete') ?>', { category:'<?= $page->slug() ?>', slug });
+      if(!res.ok){ alert('שגיאה: '+(res.error||'')); disarm(); return; }
+      row.remove();
+    });
+    document.addEventListener('click', (ev)=>{ if (!delBtn.contains(ev.target)) disarm(); });
+  });
+</script>
 </body>
 </html>

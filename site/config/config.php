@@ -10,6 +10,11 @@ function json_ok(array $arr = [], int $code = 200): Response {
 function json_err(string $msg, int $code = 400): Response {
   return Response::json(['ok' => false, 'error' => $msg], $code);
 }
+
+// פונקציה להמרת כותרות Cloze לתצוגה עם קווים תחתונים
+function cloze_title_display(string $text): string {
+  return preg_replace('/\{\{\s*\d+\s*\}\}/', '____', $text);
+}
 function safe_body(): array {
   $req  = kirby()->request();
   $raw  = $req->body()->toString();
@@ -120,9 +125,8 @@ return [
     [
       'pattern'=>'flashcards/category-new', 'method'=>'GET',
       'action'=>function(){
-        // את התוכן נרנדר מתוך snippet ייעודי (ראה קובץ למטה)
         $html = snippet('category-new', [], true);
-        return new Response($html, 'text/html', 200);
+        return new \Kirby\Http\Response($html, 'text/html', 200);
       }
     ],
 
@@ -136,21 +140,22 @@ return [
 
         $cats = $root->children()->filterBy('intendedTemplate','category');
         $data = $cats->map(function($p) use ($progress, $today){
-          $cards = $p->children()->filterBy('intendedTemplate','card');
+          // ספירה כולל תתי־קטגוריות
+          $cards = $p->index()->filterBy('intendedTemplate','card');
           $count = $cards->count();
+
           $due = 0;
           foreach ($cards as $c) {
             $row = $progress[$c->id()] ?? null;
             if ($row && !empty($row['dueAt']) && strtotime($row['dueAt']) <= $today) $due++;
           }
-          // תמיכה ב-background חדש + תאימות ל-home הקיים שמחפש gradient
+
           $bg = $p->content()->get('background')->value() ?: ($p->content()->get('gradient')->value() ?: '');
           return [
             'id'=>$p->id(),'slug'=>$p->slug(),'title'=>$p->title()->value(),
             'count'=>$count,'dueToday'=>$due,
             'icon'=>$p->content()->get('icon')->value() ?? '',
-            'background'=>$bg,
-            'gradient'=>$bg, // תאימות מלאה לעמוד הראשי שלך
+            'background'=>$bg, 'gradient'=>$bg,
           ];
         })->values();
         return json_ok(['categories'=>$data,'count'=>count($data)]);
@@ -164,22 +169,19 @@ return [
         $title = body_title_with_aliases($b);
         if ($title==='') return json_err('Missing category title');
 
-        $slug = Str::slug($title) ?: 'cat-'.date('Ymd-His');
+        $slug = \Kirby\Toolkit\Str::slug($title) ?: 'cat-'.date('Ymd-His');
         $i=1; $base=$slug; while($root->find($slug)) $slug = $base.'-'.$i++;
 
         $icon       = trim((string)($b['icon'] ?? ''));
-        $background = trim((string)($b['background'] ?? ($b['gradient'] ?? ''))); // תאימות
+        $background = trim((string)($b['background'] ?? ($b['gradient'] ?? '')));
 
         try{
           $prev = kirby()->user(); kirby()->impersonate('kirby');
-          $page = Page::create([
+          $page = \Kirby\Cms\Page::create([
             'slug'=>$slug,'template'=>'category','parent'=>$root,
             'content'=>[
-              'title'=>$title,
-              'icon'=>$icon,
-              // שומרים גם background וגם gradient לתאימות מלאה
-              'background'=>$background,
-              'gradient'=>$background,
+              'title'=>$title,'icon'=>$icon,
+              'background'=>$background,'gradient'=>$background,
             ]
           ]);
           if (method_exists($page,'changeStatus')) $page = $page->changeStatus('listed');
@@ -204,8 +206,7 @@ return [
         if (isset($b['title']))      $payload['title']      = trim((string)$b['title']);
         if (isset($b['icon']))       $payload['icon']       = trim((string)$b['icon']);
         if (isset($b['background'])) $payload['background'] = trim((string)$b['background']);
-        if (isset($b['gradient']) && !isset($b['background'])) $payload['background'] = trim((string)$b['gradient']); // תאימות
-        // לשימור תאימות גם בשדה gradient
+        if (isset($b['gradient']) && !isset($b['background'])) $payload['background'] = trim((string)$b['gradient']);
         if (isset($payload['background'])) $payload['gradient'] = $payload['background'];
 
         if (empty($payload)) return json_err('Nothing to update');
@@ -234,30 +235,134 @@ return [
       }
     ],
 
+    // ---------- תת־קטגוריות ----------
+    [
+      'pattern'=>'subcats', 'method'=>'GET',
+      'action'=>function(){
+        $root = ensure_root_flashcards(); if(!$root) return json_err('Missing /flashcards',404);
+        $catSlug = get('category'); if(!$catSlug) return json_err('Missing category slug');
+        $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
+
+        $subs = $cat->children()->filterBy('intendedTemplate','subcategory');
+        $data = $subs->map(function($p){
+          $cards = $p->children()->filterBy('intendedTemplate','card');
+          return [
+            'id'=>$p->id(),'slug'=>$p->slug(),'title'=>$p->title()->value(),
+            'count'=>$cards->count(),
+          ];
+        })->values();
+        return json_ok(['category'=>$catSlug,'subcategories'=>$data,'count'=>count($data)]);
+      }
+    ],
+    [
+      'pattern'=>'subcats/add', 'method'=>'POST',
+      'action'=>function(){
+        $root = ensure_root_flashcards(); if(!$root) return json_err('Missing /flashcards',404);
+        $b = safe_body();
+        $catSlug = trim((string)($b['category'] ?? '')); if($catSlug==='') return json_err('Missing category slug');
+        $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
+
+        $title = body_title_with_aliases($b); if ($title==='') return json_err('Missing subcategory title');
+        $slug = \Kirby\Toolkit\Str::slug($title) ?: 'sub-'.date('Ymd-His');
+        $i=1; $base=$slug; while($cat->find($slug)) $slug = $base.'-'.$i++;
+
+        try{
+          $prev = kirby()->user(); kirby()->impersonate('kirby');
+          $page = \Kirby\Cms\Page::create([
+            'slug'=>$slug,'template'=>'subcategory','parent'=>$cat,
+            'content'=>['title'=>$title]
+          ]);
+          if (method_exists($page,'changeStatus')) $page = $page->changeStatus('listed');
+          elseif (method_exists($page,'publish'))  $page = $page->publish();
+        } catch(\Throwable $e){
+          return json_err('Create failed: '.$e->getMessage(),500);
+        } finally { kirby()->impersonate($prev ? $prev->id() : null); }
+
+        return json_ok(['slug'=>$page->slug(),'title'=>$page->title()->value()]);
+      }
+    ],
+    [
+      'pattern'=>'subcats/update', 'method'=>'POST',
+      'action'=>function(){
+        $root = ensure_root_flashcards(); if(!$root) return json_err('Missing /flashcards',404);
+        $b = safe_body();
+        $catSlug = trim((string)($b['category'] ?? '')); if($catSlug==='') return json_err('Missing category slug');
+        $subSlug = trim((string)($b['slug'] ?? ''));      if($subSlug==='') return json_err('Missing subcategory slug');
+
+        $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
+        $sub = $cat->find($subSlug);  if(!$sub) return json_err('Subcategory not found',404);
+
+        $payload = [];
+        if (isset($b['title'])) $payload['title'] = trim((string)$b['title']);
+        if (empty($payload)) return json_err('Nothing to update');
+
+        try{
+          $prev = kirby()->user(); kirby()->impersonate('kirby');
+          $sub->update($payload);
+        } catch(\Throwable $e){ return json_err('Update failed: '.$e->getMessage(),500);
+        } finally { kirby()->impersonate($prev ? $prev->id() : null); }
+        return json_ok(['slug'=>$subSlug] + $payload);
+      }
+    ],
+    [
+      'pattern'=>'subcats/delete', 'method'=>'POST',
+      'action'=>function(){
+        $root = ensure_root_flashcards(); if(!$root) return json_err('Missing /flashcards',404);
+        $b = safe_body();
+        $catSlug = trim((string)($b['category'] ?? '')); if($catSlug==='') return json_err('Missing category slug');
+        $subSlug = trim((string)($b['slug'] ?? ''));      if($subSlug==='') return json_err('Missing subcategory slug');
+
+        $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
+        $sub = $cat->find($subSlug);  if(!$sub) return json_err('Subcategory not found',404);
+
+        try{
+          $prev = kirby()->user(); kirby()->impersonate('kirby');
+          $sub->delete(true);
+        } catch(\Throwable $e){ return json_err('Delete failed: '.$e->getMessage(),500);
+        } finally { kirby()->impersonate($prev ? $prev->id() : null); }
+        return json_ok(['deleted'=>$subSlug]);
+      }
+    ],
+
     // ---------- כרטיסים ----------
     [
       'pattern'=>'cards', 'method'=>'GET',
       'action'=>function(){
         $root = ensure_root_flashcards(); if(!$root) return json_err('Missing /flashcards',404);
-        $catSlug = get('category');
+        $catSlug = get('category'); 
+        $subSlug = get('subcategory') ?? get('sub');
+
         if ($catSlug){
           $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
-          $cards = $cat->children()->filterBy('intendedTemplate','card');
+          if ($subSlug){
+            $sub = $cat->find($subSlug); if(!$sub) return json_err('Subcategory not found',404);
+            $cards = $sub->children()->filterBy('intendedTemplate','card');
+          } else {
+            // כל הכרטיסים מתחת לכל תתי־הקטגוריות של הקטגוריה
+            $cards = $cat->children()->filterBy('intendedTemplate','subcategory')->children()->filterBy('intendedTemplate','card');
+          }
         } else {
-          $cards = $root->children()->filterBy('intendedTemplate','category')->children()->filterBy('intendedTemplate','card');
+          // כל הכרטיסים בכל האתר (רק מתוך תתי־קטגוריות)
+          $cards = $root->children()->filterBy('intendedTemplate','category')
+                    ->children()->filterBy('intendedTemplate','subcategory')
+                    ->children()->filterBy('intendedTemplate','card');
         }
+
         $data = $cards->map(function($p){
+          $parent = $p->parent();            // subcategory
+          $cat    = $parent?->parent();      // category
           return [
-            'id'=>$p->id(),
-            'slug'=>$p->slug(),
-            'category'=>$p->parent()?->slug(),
-            'type'=>$p->type()->value(),
-            'question'=>$p->question()->kirbytext()->value(),
-            'answer'=>$p->answer()->value(),
-            'stats'=>[
-              'box'=>(int)$p->box()->or(3)->value(),
-              'seen'=>(int)$p->seen()->or(0)->value(),
-              'correct'=>(int)$p->correct()->or(0)->value(),
+            'id'         => $p->id(),
+            'slug'       => $p->slug(),
+            'category'   => $cat?->slug(),
+            'subcategory'=> $parent?->slug(),
+            'type'       => $p->type()->value(),
+            'question'   => $p->question()->kirbytext()->value(),
+            'answer'     => $p->answer()->value(),
+            'stats'      => [
+              'box'    => (int)$p->box()->or(3)->value(),
+              'seen'   => (int)$p->seen()->or(0)->value(),
+              'correct'=> (int)$p->correct()->or(0)->value(),
             ],
           ];
         })->values();
@@ -269,13 +374,16 @@ return [
       'action'=>function(){
         $id = get('id'); if(!$id) return json_err('Missing id');
         $p = page($id); if(!$p) return json_err('Not found',404);
+        $parent = $p->parent();       // subcategory
+        $cat    = $parent?->parent(); // category
         return json_ok(['card'=>[
-          'id'=>$p->id(),
-          'slug'=>$p->slug(),
-          'category'=>$p->parent()?->slug(),
-          'type'=>$p->type()->value(),
+          'id'         => $p->id(),
+          'slug'       => $p->slug(),
+          'category'   => $cat?->slug(),
+          'subcategory'=> $parent?->slug(),
+          'type'       => $p->type()->value(),
           'question_raw'=>$p->question()->value(),
-          'answer_raw'=>$p->answer()->value(),
+          'answer_raw'  =>$p->answer()->value(),
           'stats'=>[
             'box'=>(int)$p->box()->or(3)->value(),
             'seen'=>(int)$p->seen()->or(0)->value(),
@@ -289,30 +397,34 @@ return [
       'action'=>function(){
         $root = ensure_root_flashcards(); if(!$root) return json_err('Missing /flashcards',404);
         $b = safe_body();
-        $catSlug = trim((string)($b['category'] ?? get('category') ?? '')); if($catSlug==='') return json_err('Missing category slug');
+
+        $catSlug = trim((string)($b['category'] ?? get('category') ?? '')); 
+        if($catSlug==='') return json_err('Missing category slug');
         $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
+
+        $subSlug = trim((string)($b['subcategory'] ?? $b['sub'] ?? get('subcategory') ?? get('sub') ?? ''));
+        if ($subSlug==='') return json_err('Missing subcategory slug'); // ❗ חובה תת־קטגוריה
+        $sub = $cat->find($subSlug); if(!$sub) return json_err('Subcategory not found',404);
 
         $type = $b['type'] ?? 'free';
         $q    = trim((string)($b['question'] ?? ''));
         $a    = (string)($b['answer'] ?? '');
         if ($type==='free' && ($q==='' || trim($a)==='')) return json_err('Missing question/answer');
 
-        $slugBase = Str::slug(substr(strip_tags($q) ?: 'card', 0, 60)) ?: 'card';
-        $slug=$slugBase; $i=1; $base=$slug; while($cat->find($slug)) $slug = $base.'-'.$i++;
+        $slugBase = \Kirby\Toolkit\Str::slug(substr(strip_tags($q) ?: 'card', 0, 60)) ?: 'card';
+        $slug=$slugBase; $i=1; $base=$slug; while($sub->find($slug)) $slug = $base.'-'.$i++;
 
         $content = [
-          'title'    => $q ? Str::excerpt($q,48) : 'Card',
+          'title'    => $q ? \Kirby\Toolkit\Str::excerpt($q,48) : 'Card',
           'type'     => $type,
           'question' => $q,
           'answer'   => $a,
-          'box'      => '3',
-          'seen'     => '0',
-          'correct'  => '0',
+          'box'      => '3','seen'=>'0','correct'=>'0',
         ];
 
         try{
           $prev = kirby()->user(); kirby()->impersonate('kirby');
-          $page = Page::create(['slug'=>$slug,'template'=>'card','parent'=>$cat,'content'=>$content]);
+          $page = \Kirby\Cms\Page::create(['slug'=>$slug,'template'=>'card','parent'=>$sub,'content'=>$content]);
           if (method_exists($page,'changeStatus')) $page = $page->changeStatus('listed');
           elseif (method_exists($page,'publish'))  $page = $page->publish();
         } catch(\Throwable $e){ return json_err('Create failed: '.$e->getMessage(),500);
@@ -359,9 +471,7 @@ return [
     // ---------- Progress (SM-2) ----------
     [
       'pattern'=>'flashcards/progress','method'=>'GET',
-      'action'=>function(){
-        return json_ok(['progress'=>progress_read()]);
-      }
+      'action'=>function(){ return json_ok(['progress'=>progress_read()]); }
     ],
     [
       'pattern'=>'flashcards/progress','method'=>'POST',
@@ -379,11 +489,8 @@ return [
           if ($quality >= 4) $row['correct'] = (int)($row['correct'] ?? 0) + 1;
 
           $updated = sm2_update($row, $quality);
-          $row['easiness']    = $updated['easiness'];
-          $row['interval']    = $updated['interval'];
-          $row['repetitions'] = $updated['repetitions'];
-          $row['dueAt']       = $updated['dueAt'];
-          $row['box']         = $updated['box'];
+          $row['easiness']=$updated['easiness']; $row['interval']=$updated['interval'];
+          $row['repetitions']=$updated['repetitions']; $row['dueAt']=$updated['dueAt']; $row['box']=$updated['box'];
         } elseif (isset($b['delta'])) {
           $delta = $b['delta'];
           $row['seen']    = max(0, (int)($row['seen'] ?? 0) + (int)($delta['seen'] ?? 0));
@@ -416,5 +523,49 @@ return [
       }
     ],
 
-  ]
-];
+    // ---------- Upload (תמונות) ----------
+    [
+      'pattern' => 'upload',
+      'method'  => 'POST',
+      'action'  => function () {
+        $root = ensure_root_flashcards();
+        if (!$root) return json_err('Missing /flashcards', 500);
+
+        if (empty($_FILES['image']) || !is_uploaded_file($_FILES['image']['tmp_name'])) {
+          return json_err('No file', 400);
+        }
+        $file = $_FILES['image'];
+        $allowed = ['image/jpeg','image/png','image/gif','image/webp','image/svg+xml'];
+        if (!in_array(mime_content_type($file['tmp_name']), $allowed, true)) {
+          return json_err('Unsupported type', 400);
+        }
+        if ($file['size'] > 5 * 1024 * 1024) {
+          return json_err('File too large', 400);
+        }
+
+        $ext  = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $base = \Kirby\Toolkit\Str::slug(pathinfo($file['name'], PATHINFO_FILENAME)) ?: 'img';
+        $name = $base . '-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)),0,6) . '.' . strtolower($ext);
+
+        try {
+          $prev = kirby()->user(); kirby()->impersonate('kirby');
+          $uploaded = $root->createFile([
+            'source'   => $file['tmp_name'],
+            'filename' => $name,
+          ]);
+        } catch (\Throwable $e) {
+          return json_err('Upload failed: '.$e->getMessage(), 500);
+        } finally {
+          kirby()->impersonate($prev ? $prev->id() : null);
+        }
+
+        return json_ok([
+          'url'  => $uploaded->url(),
+          'name' => $uploaded->filename(),
+          'size' => $uploaded->size()
+        ]);
+      }
+    ],
+
+  ] // <-- סוף routes
+];   // <-- סוף return
