@@ -161,6 +161,16 @@ $initialSub = get('subcategory') ?? get('sub');
             <div id="clozeResult" class="result-display" style="display:none;"></div>
           </div>
           
+          <!-- עבור תיוג על תמונה (Label) -->
+          <div id="labelArea" class="label-interaction" style="display:none;">
+            <div id="labelCanvas" style="position:relative; max-width:100%; border:1px solid var(--stroke); border-radius:8px; overflow:hidden; background:#fff;">
+              <img id="labelImg" src="" alt="תמונה לתיוג" style="max-width:100%; display:block;">
+              <div id="labelOverlay" style="position:absolute; inset:0; pointer-events:none;"></div>
+            </div>
+            <button id="labelSubmit" class="btn" style="margin-top:10px;">בדוק תשובות</button>
+            <div id="labelResult" class="result-display" style="display:none;"></div>
+          </div>
+          
         </div>
       </div>
     </div>
@@ -286,6 +296,7 @@ function escapeHtml(s){
   const mcArea   = $('#mcArea');    
   const tfArea   = $('#tfArea');    
   const clozeArea= $('#clozeArea'); 
+  const labelArea= $('#labelArea'); 
   
   // כפתורים וקלטים
   const flipBtn  = $('#flip');      
@@ -294,6 +305,7 @@ function escapeHtml(s){
   const tfFalse  = $('#tfFalse');
   const tfSubmit = $('#tfSubmit');
   const clozeSubmit = $('#clozeSubmit');
+  const labelSubmit = $('#labelSubmit');
   const hideAnswerBtn = $('#hideAnswerBtn');
   
   // תוצאות
@@ -301,6 +313,11 @@ function escapeHtml(s){
   const mcResult = $('#mcResult');
   const tfResult = $('#tfResult');
   const clozeResult = $('#clozeResult');
+  const labelResult = $('#labelResult');
+  
+  // עבור תיוג על תמונה
+  const labelImg = $('#labelImg');
+  const labelOverlay = $('#labelOverlay');
   
   // ניווט ובקרה
   const prevBtn  = $('#prev');
@@ -746,6 +763,9 @@ function escapeHtml(s){
       case 'cloze':
         renderClozeQuestion2(c);
         break;
+      case 'label':
+        renderLabelQuestion(c);
+        break;
       default:
         renderFreeQuestion(c);
     }
@@ -765,6 +785,7 @@ function escapeHtml(s){
     mcArea.style.display = 'none'; 
     tfArea.style.display = 'none';
     clozeArea.style.display = 'none';
+    labelArea.style.display = 'none';
   }
 
   // שאלה פתוחה - נשארת כמו קודם
@@ -872,6 +893,153 @@ function escapeHtml(s){
     
     // טעינת מצב שמור
     setTimeout(() => loadClozeState(), 50);
+  }
+
+  // תיוג על תמונה (Label)
+  function renderLabelQuestion(c) {
+    labelArea.style.display = '';
+    
+    let answerData = null;
+    try {
+      answerData = JSON.parse(c.answer || '{}');
+    } catch(e) {
+      console.error('שגיאה בפענוח נתוני תיוג:', e);
+      return;
+    }
+    
+    if (!answerData.image) {
+      labelResult.innerHTML = '<div class="muted">לא נמצאה תמונה לשאלה זו</div>';
+      labelResult.style.display = 'block';
+      return;
+    }
+    
+    // טעינת התמונה
+    labelImg.src = answerData.image;
+    labelImg.onload = () => {
+      renderLabelItems(answerData.items || []);
+    };
+    
+    // איפוס מצב
+    labelSubmit.style.display = 'block';
+    labelResult.style.display = 'none';
+  }
+  
+  function renderLabelItems(items) {
+    labelOverlay.innerHTML = '';
+    if (!labelImg.naturalWidth) return;
+
+    const W = labelImg.clientWidth;
+    const H = labelImg.clientHeight;
+
+    items.forEach(item => {
+      // נקודת העוגן
+      const ax = Math.round(item.anchor.x * W);
+      const ay = Math.round(item.anchor.y * H);
+      
+      // תיבת התשובה (מרכז התיבה)
+      const boxX = Math.round(item.box.x * W);
+      const boxY = Math.round(item.box.y * H);
+      const boxW = Math.round(item.box.w * W);
+      const boxH = Math.round(item.box.h * H);
+      const bx = boxX + boxW / 2; // מרכז התיבה X
+      const by = boxY + boxH / 2; // מרכז התיבה Y
+      
+      // קו מהנקודה לתיבה
+      const line = document.createElement('div');
+      line.style.position = 'absolute';
+      line.style.pointerEvents = 'none';
+      line.style.borderTop = '2px solid #2563eb';
+      line.style.zIndex = '1';
+      line.style.transformOrigin = '0 0';
+      
+      const length = Math.hypot(bx - ax, by - ay);
+      const angle = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+      
+      line.style.left = ax + 'px';
+      line.style.top = ay + 'px';
+      line.style.width = length + 'px';
+      line.style.transform = `rotate(${angle}deg)`;
+      labelOverlay.appendChild(line);
+
+      // תיבת התשובה
+      const box = document.createElement('div');
+      box.className = 'label-answer-box';
+      box.dataset.id = String(item.id);
+      box.style.position = 'absolute';
+      box.style.left = boxX + 'px';
+      box.style.top = boxY + 'px';
+      box.style.width = boxW + 'px';
+      box.style.height = boxH + 'px';
+      box.style.border = '2px solid #2563eb';
+      box.style.background = 'rgba(255,255,255,0.95)';
+      box.style.borderRadius = '8px';
+      box.style.padding = '8px';
+      box.style.cursor = 'pointer';
+      box.style.pointerEvents = 'auto';
+      box.style.display = 'flex';
+      box.style.flexDirection = 'column';
+      box.style.zIndex = '2';
+      
+      const label = document.createElement('div');
+      label.style.fontWeight = 'bold';
+      label.style.marginBottom = '4px';
+      label.style.fontSize = '12px';
+      label.textContent = `${item.id}`;
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'תשובה...';
+      input.style.border = '1px solid #ddd';
+      input.style.borderRadius = '4px';
+      input.style.padding = '4px';
+      input.style.fontSize = '12px';
+      input.style.textAlign = 'right';
+      input.dir = 'rtl';
+      
+      box.appendChild(label);
+      box.appendChild(input);
+      labelOverlay.appendChild(box);
+      
+      // נקודת העוגן
+      const anchor = document.createElement('div');
+      anchor.style.position = 'absolute';
+      anchor.style.left = (ax - 4) + 'px';
+      anchor.style.top = (ay - 4) + 'px';
+      anchor.style.width = '8px';
+      anchor.style.height = '8px';
+      anchor.style.background = '#dc2626';
+      anchor.style.borderRadius = '50%';
+      anchor.style.zIndex = '3';
+      labelOverlay.appendChild(anchor);
+    });
+  }
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'תשובה...';
+      input.style.border = '1px solid #ddd';
+      input.style.borderRadius = '4px';
+      input.style.padding = '4px';
+      input.style.fontSize = '12px';
+      input.style.textAlign = 'right';
+      input.dir = 'rtl';
+      
+      box.appendChild(label);
+      box.appendChild(input);
+      labelOverlay.appendChild(box);
+      
+      // נקודת העוגן
+      const anchor = document.createElement('div');
+      anchor.style.position = 'absolute';
+      anchor.style.left = (ax - 4) + 'px';
+      anchor.style.top = (ay - 4) + 'px';
+      anchor.style.width = '8px';
+      anchor.style.height = '8px';
+      anchor.style.background = '#dc2626';
+      anchor.style.borderRadius = '50%';
+      anchor.style.zIndex = '3';
+      labelOverlay.appendChild(anchor);
+    });
   }
 
   let selectedTFAnswer = null;
@@ -1316,6 +1484,75 @@ const putProgress = (id, row) =>
     handleClozeSubmission(currentCard);
     saveClozeState(); // שמירת מצב אחרי שליחה
   });
+  
+  // תיוג על תמונה (Label)
+  labelSubmit.addEventListener('click', ()=>{
+    const currentCard = deck[pos];
+    handleLabelSubmission(currentCard);
+  });
+  
+  function handleLabelSubmission(c) {
+    let answerData = null;
+    try {
+      answerData = JSON.parse(c.answer || '{}');
+    } catch(e) {
+      console.error('שגיאה בפענוח נתוני תיוג:', e);
+      return;
+    }
+    
+    const items = answerData.items || [];
+    let correctCount = 0;
+    let totalCount = items.length;
+    
+    items.forEach(item => {
+      const input = labelOverlay.querySelector(`[data-id="${item.id}"] input`);
+      if (!input) return;
+      
+      const userAnswer = input.value.trim();
+      const correctAnswers = item.answers || [];
+      
+      let isCorrect = false;
+      if (userAnswer && correctAnswers.length > 0) {
+        // בדיקה אם התשובה מתאימה לאחת מהתשובות הנכונות
+        isCorrect = correctAnswers.some(correct => 
+          userAnswer.toLowerCase() === correct.toLowerCase()
+        );
+      }
+      
+      if (isCorrect) {
+        correctCount++;
+        input.style.backgroundColor = '#d4edda';
+        input.style.borderColor = '#28a745';
+        input.style.color = '#155724';
+      } else {
+        input.style.backgroundColor = '#f8d7da';
+        input.style.borderColor = '#dc3545';
+        input.style.color = '#721c24';
+      }
+      
+      input.disabled = true;
+    });
+    
+    // הצגת תוצאות
+    const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+    const resultClass = percentage >= 80 ? 'result-correct' : percentage >= 60 ? 'result-partial' : 'result-wrong';
+    
+    labelResult.innerHTML = `
+      <div class="${resultClass}">
+        <strong>${correctCount}/${totalCount} נכון (${percentage}%)</strong>
+      </div>
+    `;
+    labelResult.style.display = 'block';
+    labelSubmit.style.display = 'none';
+    
+    // קביעת איכות אוטומטית
+    let quality = 2; // לא זכור
+    if (percentage >= 90) quality = 5; // מושלם
+    else if (percentage >= 80) quality = 4; // טוב
+    else if (percentage >= 60) quality = 3; // בסדר
+    
+    selectQuality(quality);
+  }
   
   // פונקציה לשמירת תשובות חלקיות בזמן הקלדה
   function saveClozePartialAnswers() {
