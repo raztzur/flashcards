@@ -28,18 +28,40 @@ html, body {
 
 /* ——— משתנים ——— */
 :root{
-  /* צבעי בסיס */
-  --bg-page: #f5f7fb;
-  --bg-card: #ffffff;
-  --stroke: #e7e9ef;
-  --ink: #0b0f19;
-  --ink-muted: #667085;
+  /* צבעי בסיס נקיים (כמו ctrl.xyz) */
+  --bg-page: #f8f8f8;
+  --bg-card: #eceeeb;
+  --stroke: #e5e7eb;
+  --ink: #111827;
+  --ink-muted: #6b7280;
 
-  /* רדיוסים/צל */
-  --radius-md:12px;
-  --radius-lg:16px;
-  --radius-xl:20px;
-  --shadow:0 8px 22px rgba(16,24,40,.06), 0 2px 6px rgba(16,24,40,.06);
+  /* צבעי מותג מודרניים */
+  --primary: #eceeeb;
+  --primary-hover: #d3d7d3;
+  --primary-light: #eff6ff;
+  
+  --success: #059669;
+  --success-light: #ecfdf5;
+  
+  --warning: #d97706;
+  --warning-light: #fffbeb;
+  
+  --danger: #dc2626;
+  --danger-light: #fef2f2;
+
+  /* צבעי אינטראקציה */
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-light: #f3f4f6;
+
+  /* צללים עדינים יותר */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow: 0 0px 0px rgba(0,0,0,.05);
+  --shadow-md: 0 0px 0px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 0px 0px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
 
   /* גדלים */
   --container-w:1200px;
@@ -50,13 +72,10 @@ html, body {
   --question-h: 120px;
   --answer-h: 300px;
 
-
-  /* צבעי מצב */
-  --blue-50:#f2f4ff;
-  --blue-200:#e2e6ff;
-  --blue-700:#2b36a8;
-
-  --danger:#c00;
+  /* צבעי מצב ישנים - לתאימות לאחור */
+  --blue-50: var(--primary-light);
+  --blue-200: var(--primary-light);
+  --blue-700: var(--primary);
 }
 
 /* ====== Reset עדין ====== */
@@ -66,30 +85,132 @@ html,body{
   background:var(--bg-page); color:var(--ink);
 }
 
+/* ====== טיפוגרפיה מודרנית ====== */
+h1, h2, h3 { 
+  margin:0; 
+  font-weight:700; 
+  letter-spacing:-.025em; 
+  line-height:1.2;
+  color:var(--ink);
+}
+
+h1 { 
+  font-size:24px; 
+  font-weight:800;
+}
+
+h2 { 
+  font-size: 21px; 
+}
+
+h3 { 
+  font-size:18px; 
+}
+
 /* ====== Layout כללי ====== */
-.container{ max-width:var(--container-w); padding:24px 20px; margin:0 auto; }
+.container{ 
+  max-width:var(--container-w); 
+  padding:32px 20px; 
+  margin:0 auto; 
+}
 main.container{ min-height:100dvh; }
 
-/* ====== טופ-בר / ניווט ====== */
-.topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
-.topbar h1{ margin:0; font-size:28px; font-weight:800; letter-spacing:-.02em; }
-.nav{ display:flex; gap:8px; flex-wrap:wrap; }
+/* ====== טופ-בר משופר ====== */
+.topbar{ 
+  display:flex; 
+  justify-content:space-between; 
+  align-items:center; 
+  margin-bottom:40px;
+  padding:0 0 15px 0;
+  /* border-bottom:1px solid var(--stroke); */
+}
+.topbar h1{ 
+  margin:0; 
+  font-size: 28px; 
+  font-weight:800; 
+  letter-spacing:-.03em;
+  color:var(--ink);
+}
+.nav{ 
+  background: var(--bg-card);
+  display:flex; 
+  padding: 8px 12px;
+  gap:12px; 
+  flex-wrap:wrap; 
+  border-radius: var(--radius-md);
+}
 
-/* ====== כפתורים (גלובלי) ====== */
+/* ====== כפתורים מודרניים ====== */
 .btn{
+  font-size: 13px;
   display:inline-flex; align-items:center; justify-content:center;
   gap:8px; cursor:pointer; text-decoration:none;
-  border:1px solid var(--stroke);
-  border-radius:999px; padding:10px 14px;
-  background:var(--bg-card); color:var(--ink);
-  box-shadow:var(--shadow);
-  transition:transform .12s ease, background .12s ease;
+  border:none;
+  border-radius:var(--radius-lg); 
+  padding:6px 10px;
+  /* background:var(--primary);  */
+  color:rgb(0, 0, 0);
+  font-weight:600;
+  transition:all .15s ease;
 }
-.btn:hover{ transform:translateY(-1px); }
-.btn.icon{ padding:6px; width:36px; height:36px; border-radius:12px; box-shadow:inset 0 0 0 1px var(--stroke); }
-.btn.ghost{ background:#f7f8fc; border-color:transparent; box-shadow:inset 0 0 0 1px var(--stroke); }
-.btn.danger{ color:var(--danger); border-color:var(--danger); box-shadow:none; background:#fff; }
-.btn.small{ padding:6px 10px; font-size:13px; }
+.btn:hover{ 
+  background:var(--primary-hover);
+}
+.btn:active{ 
+  transform:translateY(0); 
+}
+
+/* סוגי כפתורים */
+.btn.secondary{
+  background:var(--bg-card); 
+  color:var(--ink);
+  border:1px solid var(--stroke);
+  box-shadow:var(--shadow);
+}
+.btn.secondary:hover{ 
+  background:var(--bg-page);
+  border-color:var(--primary);
+}
+
+.btn.ghost{ 
+  background:transparent; 
+  color:var(--ink-muted);
+  border:1px solid var(--stroke); 
+  box-shadow:none;
+}
+.btn.ghost:hover{ 
+  background:var(--bg-page);
+  color:var(--ink);
+}
+
+.btn.danger{ 
+  background:var(--danger); 
+  color:white;
+}
+.btn.danger:hover{ 
+  background:#dc2626;
+}
+
+.btn.success{
+  background:var(--success);
+  color:white;
+}
+.btn.success:hover{
+  background:#059669;
+}
+
+.btn.small{ 
+  padding:8px 14px; 
+  font-size:13px; 
+  border-radius:var(--radius-md);
+}
+
+.btn.icon{ 
+  padding:8px; 
+  width:40px; 
+  height:40px; 
+  border-radius:var(--radius-md);
+}
 
 /* ====== כפתורי אייקון מקצועיים ====== */
 .icon-btn{
@@ -106,66 +227,431 @@ main.container{ min-height:100dvh; }
 .icon-btn.danger:disabled{ border-color:#f2c6c6 !important; color:#a40000 !important; opacity:0.7; cursor:not-allowed; }
 .icon-btn.danger.processing{ border-color:#f2c6c6 !important; color:#a40000 !important; opacity:0.7; cursor:not-allowed; pointer-events:none; }
 
-/* ====== רשת קטגוריות ====== */
-.grid{ display:grid; gap:20px; grid-template-columns:repeat(3,1fr); }
-@media (max-width:1000px){ .grid{ grid-template-columns:repeat(2,1fr); } }
-@media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+/* ====== רשת מודרנית עם רווחים גדולים ====== */
+.grid{ 
+  display:grid; 
+  gap:32px; 
+  grid-template-columns:repeat(3,1fr); 
+  margin-top:32px;
+}
+@media (max-width:1000px){ 
+  .grid{ 
+    grid-template-columns:repeat(2,1fr); 
+    gap:24px;
+  } 
+}
+@media (max-width:560px){ 
+  .grid{ 
+    grid-template-columns:1fr; 
+    gap:20px;
+  } 
+}
 
-/* ====== כרטיס קטגוריה ====== */
+/* ====== מבנה קטגוריות ותת-קטגוריות ====== */
+.category-card{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+.title{
+  font-size:20px;
+  font-weight:700;
+  color:var(--ink);
+  text-decoration:none;
+  line-height:1;
+  letter-spacing: -0.025em;
+  transition:all .2s ease;
+}
+
+/* תת-קטגוריות */
+.subcategories{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.subcard{
+  background: var(--bg-card);
+  /* border:1px solid var(--stroke); */
+  border-radius:8px;
+  padding:8px 12px;
+  transition:background .2s ease;
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.subcard:hover{
+  transform:none;
+  box-shadow:none;
+}
+
+.subcard-main{
+  flex:1;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.subcard-title{
+  font-size:14px;
+  font-weight:500;
+  color:var(--ink);
+  text-decoration:none;
+  line-height:1.4;
+}
+
+.subcard-title:hover{
+  opacity:0.7;
+}
+
+.subcard-actions{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  position:relative;
+}
+
+/* ====== כרטיסיות צבעוניות (כמו בתמונה) ====== */
 .card{
-  position:relative; overflow:hidden;
-  background:var(--bg-card);
-  border:1px solid var(--stroke);
-  border-radius:var(--radius-xl);
-  padding:16px 14px;
-  display:flex; flex-direction:column; gap:12px;
-  min-height:150px;
-  box-shadow:var(--shadow);
+  position:relative; 
+  overflow:visible;
+  background:#9dc4f5; /* כחול בהיר כברירת מחדל */
+  border:none;
+  border-radius:24px;
+  padding: 16px 20px;
+  display:flex; 
+  flex-direction:column; 
+  gap:20px;
+  min-height:100px;
   justify-content: space-between;
+  transition:all .2s ease;
+}
+
+/* צבעים מותאמים אישית או מחזוריים */
+.card[data-color="pink"] { background: #ffcadc; } /* ורוד עדין */
+.card[data-color="yellow"] { background: #fbe74e; } /* צהוב */
+.card[data-color="blue"] { background: #9dc4f5; } /* כחול בהיר */
+.card[data-color="green"] { background: #c2ddc2; } /* ירוק עדין */
+.card[data-color="red"] { background: #ed6f60; } /* אדום */
+
+/* גיבוי - צבעים מוצקים כמו בתמונה (למקרה שאין data-color) */
+.card:nth-child(5n+1):not([data-color]) { background: #ffcadc; } /* ורוד עדין */
+.card:nth-child(5n+2):not([data-color]) { background: #fbe74e; } /* צהוב */
+.card:nth-child(5n+3):not([data-color]) { background: #9dc4f5; } /* כחול בהיר */
+.card:nth-child(5n+4):not([data-color]) { background: #c2ddc2; } /* ירוק עדין */
+.card:nth-child(5n+5):not([data-color]) { background: #ed6f60; } /* אדום */
+
+.card:hover{
 }
 .card .bg{ display:none; }
 
 .card-top{
-  display:flex; align-items:flex-start; justify-content:space-between;
+  display:flex; 
+  align-items:flex-start; 
+  justify-content:space-between;
+  gap:16px;
 }
-.card-top-left{ display:flex; align-items:center; gap:10px; }
+.card-top-left{ 
+  display:flex; 
+  align-items: center; 
+  gap:8px; 
+  flex:1;
+  min-width:0;
+}
 
-/* אייקון ללא מסגרת */
+/* תגית גדולה עם טקסט שחור */
+.card .title a{
+  color:black;
+  text-decoration:none;
+  font-weight:700;
+  font-size:24px;
+
+  display:inline-block;
+  transition:all .2s ease;
+}
+.card .title a:hover{
+  opacity:0.7;
+}
+
+/* אייקון גדול יותר */
 .iconwrap{
-  width:28px; height:28px; border-radius:0; border:none; background:transparent;
-  display:flex; align-items:center; justify-content:center; box-shadow:none;
+  /* width:48px; 
+  height:48px;  */
+  border-radius:50%; 
+  border:none; 
+  background:transparent;
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  box-shadow:none;
+  flex-shrink:0;
 }
-.iconwrap img, .iconwrap svg{ width:20px; height:20px; opacity:.9; }
+.iconwrap img, .iconwrap svg{ 
+  width:32px; 
+  height:32px; 
+  opacity:1;
+  color:black;
+  filter:none;
+}
 
-/* נקודת צבע קטנה ליד הכותרת */
+/* נקודת צבע נסתרת */
 .colordot{
-  width:10px; height:10px; border-radius:999px; display:inline-block; margin-inline-start:6px;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);
+  display:none;
 }
 
-.title a{
-  font-weight:800; font-size:16px; letter-spacing:-.01em;
-  color:var(--ink); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+/* כפתור תפריט יחיד */
+.card .actions{
+  display:flex; 
+  gap:8px; 
+  align-items:flex-start;
+  flex-shrink:0;
+  position:relative;
 }
 
-/* כפתורי פעולה עליונים */
-.actions{ display:flex; gap:6px; align-items:center; }
-
-/* שורה תחתונה */
-.card-bottom{ display:flex; align-items:flex-end; justify-content:space-between; }
-.sub{ color:var(--ink-muted); font-size:13px; display:flex; gap:12px; align-items:center; }
-.pill, .due{ all:unset; }
-
-/* כפתור מבחן כאייקון בלבד */
-.testbtn.btn.icon{ width:36px; height:36px; border-radius:12px; }
-
-/* רכיבי מטא ישנים (שמורים לתאימות) */
-.meta{ display:flex; flex-direction:column; gap:6px; min-width:0; position:relative; z-index:3; }
-.pill{
-  border:1px solid var(--stroke); background:#fff; border-radius:999px; padding:4px 10px; font-size:12px;
+.card .menu-btn{ 
+  background:rgba(0,0,0,0.1);
+  border:none;
+  color:black;
+  width:24px;
+  height:24px;
+  border-radius:20%;
+  cursor:pointer;
+  transition:all .2s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-.due{
-  border:1px solid var(--blue-200); background:var(--blue-50); color:var(--blue-700); font-weight:600; border-radius:999px; padding:2px 8px; font-size:12px;
+.card .menu-btn svg{
+  width:20px;
+  height:20px;
+  fill:currentColor;
+}
+.card .menu-btn:hover{
+  background:rgba(0,0,0,0.2);
+}
+
+/* תפריט נפתח */
+.card .menu-dropdown{
+  position:absolute;
+  top:calc(100% + 4px);
+  right:0;
+  background:white;
+  border:1px solid var(--stroke);
+  border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  padding:4px;
+  display:none;
+  z-index:1000;
+  width:auto;
+  overflow:visible;
+}
+.card .menu-dropdown a,
+.card .menu-dropdown button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  padding:6px;
+  border-radius:20%;
+  cursor:pointer;
+  transition:background .2s ease;
+  color:var(--ink);
+  text-decoration:none;
+  border:none;
+  background:none;
+  width:24px;
+  height:24px;
+}
+.card .menu-dropdown a svg,
+.card .menu-dropdown button svg{
+  width:16px;
+  height:16px;
+  flex-shrink:0;
+}
+.card .menu-dropdown a:hover,
+.card .menu-dropdown button:hover{
+  background:var(--bg-page);
+}
+.card .menu-dropdown .danger{
+  color:var(--danger);
+}
+.card .menu-dropdown .danger:hover{
+  background:var(--danger-light);
+}
+
+/* תפריטים של תת-קטגוריות - כפתורים קטנים */
+.subcard .menu-dropdown{
+  padding:2px;
+  min-width:80px;
+}
+
+.subcard .menu-dropdown a,
+.subcard .menu-dropdown button{
+  width:20px;
+  height:20px;
+  padding:2px;
+  border-radius:3px;
+}
+
+.subcard .menu-dropdown a svg,
+.subcard .menu-dropdown button svg{
+  width:8px;
+  height:8px;
+}
+
+/* שורה תחתונה - רק כפתור מבחן */
+.card-bottom{ 
+  display: flex; 
+  align-items: center; 
+  justify-content: flex-end;
+}
+
+/* הסתרת המידע רק בעמוד הראשי */
+.template-flashcards .card .sub{ 
+  display:none;
+}
+
+/* כפתור מבחן גדול יותר במרכז רק בעמוד הראשי */
+.template-flashcards .card .card-bottom .icon-btn{ 
+  background:rgba(255,255,255,0.3);
+  border:none;
+  color:black;
+  width:40px;
+  height:40px;
+  border-radius:10%;
+  transition: all .2s ease;
+}
+.template-flashcards .card .card-bottom .icon-btn:hover{
+  background:rgba(255,255,255,0.5);
+  transform:scale(1.1);
+}
+
+/* עריכה inline על רקע לבן */
+.card .editrow{
+  background:rgba(255,255,255,0.95);
+  border-radius:16px;
+  padding:16px;
+  backdrop-filter:blur(10px);
+  display:none;
+  flex-direction:column;
+  gap:12px;
+}
+
+.card .editrow.show{
+  display:flex;
+}
+
+.edit-field{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.edit-field label{
+  font-size:12px;
+  font-weight:600;
+  color:var(--ink-muted);
+}
+
+.edit-field input,
+.edit-field select{
+  background:white;
+  border:1px solid var(--stroke);
+  border-radius:8px;
+  padding:8px 12px;
+  color:var(--ink);
+  font-size:14px;
+}
+
+.edit-actions{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+
+/* בוחר צבעים */
+.color-picker{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.color-option{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  border:2px solid transparent;
+  cursor:pointer;
+  transition:all .2s ease;
+  position:relative;
+}
+
+.color-option:hover{
+  transform:scale(1.1);
+  border-color:var(--ink-muted);
+}
+
+.color-option.selected{
+  border-color:var(--ink);
+  transform:scale(1.1);
+}
+
+.color-option.selected::after{
+  content:'✓';
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  color:var(--ink);
+  font-weight:bold;
+  font-size:14px;
+}
+
+/* בוחר אייקונים */
+.icon-picker{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  max-height:120px;
+  overflow-y:auto;
+}
+
+.icon-option{
+  width:40px;
+  height:40px;
+  border:2px solid var(--stroke);
+  border-radius:8px;
+  cursor:pointer;
+  transition:all .2s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:white;
+}
+
+.icon-option:hover{
+  border-color:var(--ink-muted);
+  transform:scale(1.05);
+}
+
+.icon-option.selected{
+  border-color:var(--primary);
+  background:var(--primary-light);
+}
+
+.icon-option img{
+  width:24px;
+  height:24px;
+  object-fit:contain;
+}
+
+.icon-option span{
+  font-size:10px;
+  color:var(--ink-muted);
+  text-align:center;
 }
 
 /* ====== עריכה אינליין בכרטיס ====== */
@@ -181,14 +667,14 @@ main.container{ min-height:100dvh; }
 
 /* ====== פאנלים/קופסאות מידע ====== */
 .panel{
-  border:1px solid var(--stroke); border-radius:var(--radius-lg); padding:16px; background:var(--bg-card);
+  /* border:1px solid var(--stroke); */
+   border-radius:var(--radius-lg); padding:16px; background:var(--bg-card);
   box-shadow:var(--shadow); margin-bottom:16px;
 }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .kpi{
   display:flex; gap:8px; align-items:center;
-  border:1px solid var(--stroke); border-radius:10px; padding:6px 10px; background:#fff;
-  box-shadow:inset 0 0 0 1px var(--stroke);
+  border-radius:10px; padding:6px 10px; background:#fff;
 }
 
 /* ====== פיקרים (צבעים/אייקונים) ====== */
@@ -255,7 +741,7 @@ html[dir="rtl"] .grid{ direction:rtl; }
   margin-bottom: 12px; /* Added gap between test-info and progress bar */
 }
 .test-deck {
-  border:1px solid var(--stroke); border-radius:16px; padding:16px;
+   border-radius:16px; padding:16px;
   background: var(--bg-card); box-shadow: var(--shadow);
 }
 .card-stage { display:grid; gap:12px; }
@@ -433,7 +919,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
 .flipcard {
   min-height: 400px;
   background: var(--bg-card);
-  border: 1px solid var(--stroke);
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow);
@@ -517,7 +1002,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
   flex-shrink: 0;
   overflow: auto;
   padding: 16px;
-  border-bottom: 1px solid var(--stroke);
   /* מרכז את תוכן השאלה מבלי לשנות את יישור הטקסט */
   display: flex;
   flex-direction: column;
@@ -530,7 +1014,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
   height: 70%; /* 70% מ-620px = 434px */
   flex-shrink: 0;
   overflow: auto;
-  padding: 16px;
   /* מרכז את תיבות התשובה מבלי לשנות את יישור הטקסט */
   display: flex;
   flex-direction: column;
@@ -541,9 +1024,8 @@ html[dir="rtl"] .grid{ direction:rtl; }
 
 .controls-container {
   background: var(--bg-card);
-  border: 1px solid var(--stroke);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 12px;
   box-shadow: var(--shadow);
   margin-top: 16px;
 }
@@ -856,7 +1338,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
 }
 
 .mc-option {
-  border: 1px solid var(--stroke);
   border-radius: 8px;
   padding: 12px 16px;
   background: #fff;
@@ -948,7 +1429,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
 
 /* תוצאות */
 .result-display {
-  border: 1px solid var(--stroke);
   border-radius: 12px;
   padding: 16px;
   background: var(--blue-50);
@@ -973,7 +1453,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
 
 .question-box,
 .answer-box{
-  border:1px solid var(--stroke);
   border-radius:16px;
   padding:16px;
   background:#fff;
@@ -1003,7 +1482,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
 
 /* התשובה – קופסה קבועה בגובה, התוכן ממורכז */
 .answer-box{
-  border:1px solid var(--stroke);
   border-radius:12px;
   background:#fff;
   height:var(--answer-h);
@@ -1076,23 +1554,52 @@ html[dir="rtl"] .grid{ direction:rtl; }
   background:transparent;
 }
 
-/* מקשים / איכות תשובה */
+/* כפתורי איכות מודרניים */
 .quality-row { 
   display:flex; 
-  gap:8px; 
+  gap:12px; 
   justify-content:center; 
   flex-wrap:wrap; 
   transition: opacity 0.3s ease;
 }
-.quality-row .btn { border-radius:999px; }
-.quality-bad   { border-color:#c62828; color:#c62828; }
-.quality-mid   { border-color:#f57c00; color:#f57c00; }
-.quality-good  { border-color:#2e7d32; color:#2e7d32; }
+.quality-row .btn { 
+  border-radius:var(--radius-lg);
+  padding:12px 12px;
+  font-weight:600;
+  min-width:120px;
+}
+.quality-bad   { 
+  background:var(--danger-light); 
+  color:var(--danger); 
+  border-color:var(--danger);
+}
+.quality-bad:hover {
+  background:var(--danger);
+  color:white;
+}
+.quality-mid   { 
+  background:var(--warning-light); 
+  color:var(--warning); 
+  border-color:var(--warning);
+}
+.quality-mid:hover {
+  background:var(--warning);
+  color:white;
+}
+.quality-good  { 
+  background:var(--success-light); 
+  color:var(--success); 
+  border-color:var(--success);
+}
+.quality-good:hover {
+  background:var(--success);
+  color:white;
+}
 
 /* בורר גודל חפיסה */
 .test-size { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 .test-size .chip {
-  border:1px solid var(--stroke); border-radius:999px; padding:4px 10px; cursor:pointer; background:#fff;
+  border-radius:999px; padding:4px 10px; cursor:pointer; background:#fff;
   font-size:13px; color:var(--ink);
 }
 .test-size .chip[aria-pressed="true"] { background:#000; color:#fff; }
@@ -1417,4 +1924,35 @@ label { font-size:13px; color: var(--ink-muted); display:block; margin-bottom:6p
     font-size: 11px;
     padding: 3px;
   }
+}
+
+/* ===== Compact inline panel: Add Subcategory (on main page) ===== */
+[data-add-sub-panel].panel {
+  padding: 8px;
+  margin-top: 8px;
+}
+[data-add-sub-panel] .form-row {
+  gap: 6px;
+  align-items: center;
+}
+[data-add-sub-panel] .field {
+  margin: 0;
+}
+[data-add-sub-panel] .field label {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+[data-add-sub-panel] input[type="text"] {
+  padding: 6px 8px;
+  height: 32px;
+  font-size: 13px;
+}
+[data-add-sub-panel] .btn {
+  padding: 6px 10px;
+  height: 32px;
+  font-size: 12px;
+}
+[data-add-sub-panel] .form-msg {
+  font-size: 12px;
+  margin-inline-start: 8px;
 }

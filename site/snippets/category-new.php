@@ -38,6 +38,18 @@ if (is_dir($iconsDir)) {
           <div class="helper">אפשר לערוך את השם אחר כך</div>
         </div>
 
+        <div class="field" style="min-width:200px;">
+          <label for="color">צבע קטגוריה</label>
+          <div class="color-picker" id="colorPicker">
+            <div class="color-option" data-color="pink" style="background-color: #ffcadc;" title="ורוד"></div>
+            <div class="color-option" data-color="yellow" style="background-color: #fbe74e;" title="צהוב"></div>
+            <div class="color-option selected" data-color="blue" style="background-color: #9dc4f5;" title="כחול"></div>
+            <div class="color-option" data-color="green" style="background-color: #c2ddc2;" title="ירוק"></div>
+            <div class="color-option" data-color="red" style="background-color: #ed6f60;" title="אדום"></div>
+          </div>
+          <div class="helper">ניתן לשנות צבע גם אחר כך</div>
+        </div>
+
         <div class="field" style="flex:1; min-width:260px;">
           <label>אייקון</label>
           <?php if (!empty($icons)): ?>
@@ -73,6 +85,9 @@ if (is_dir($iconsDir)) {
       return first ? first.getAttribute('data-name') : '';
     })();
 
+    // בחירת צבע
+    let selectedColor = 'blue';
+
     const iconsWrap = document.getElementById('icons');
     if (iconsWrap){
       iconsWrap.addEventListener('click', (ev)=>{
@@ -80,6 +95,16 @@ if (is_dir($iconsDir)) {
         iconsWrap.querySelectorAll('.iconopt').forEach(x=>x.classList.remove('selected'));
         btn.classList.add('selected');
         selectedIcon = btn.getAttribute('data-name') || '';
+      });
+    }
+
+    const colorPicker = document.getElementById('colorPicker');
+    if (colorPicker) {
+      colorPicker.addEventListener('click', (ev) => {
+        const option = ev.target.closest('.color-option'); if(!option) return;
+        colorPicker.querySelectorAll('.color-option').forEach(x=>x.classList.remove('selected'));
+        option.classList.add('selected');
+        selectedColor = option.getAttribute('data-color') || 'blue';
       });
     }
 
@@ -114,7 +139,8 @@ if (is_dir($iconsDir)) {
       msg.textContent = 'שומר…';
       const res = await postJSON('<?= url('categories/add') ?>', {
         title: t,
-        icon: selectedIcon
+        icon: selectedIcon,
+        color: selectedColor
       });
 
       if (!res.ok){

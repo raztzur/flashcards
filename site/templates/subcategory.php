@@ -100,7 +100,7 @@ $avgEf = $efCount ? ($efSum / $efCount) : null;
     <header class="topbar">
       <h1><?= html($sub?->title()) ?></h1>
       <nav class="nav">
-        <a class="btn ghost" href="<?= url('flashcards/'.$catSlug) ?>">← חזרה לקטגוריה</a>
+        <a class="btn ghost" href="<?= url('flashcards') ?>">← חזרה לעמוד הראשי</a>
         <a class="btn" href="<?= url('flashcards/add') . '?category=' . urlencode($catSlug) . '&subcategory=' . urlencode($subSlug) ?>">הוסף כרטיסייה</a>
         <a class="btn" href="<?= url('flashcards/test') . '?category=' . urlencode($catSlug) . '&subcategory=' . urlencode($subSlug) . '&auto=1' ?>">מבחן בתת־קטגוריה</a>
       </nav>
@@ -119,7 +119,6 @@ $avgEf = $efCount ? ($efSum / $efCount) : null;
     </section>
 
     <section>
-      <h2>כרטיסיות</h2>
       <div class="list" id="cardList">
         <?php foreach ($cards as $c):
           $row = $progress[$c->id()] ?? ['seen'=>0,'correct'=>0,'box'=>3,'easiness'=>2.5];

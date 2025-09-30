@@ -170,6 +170,7 @@ return [
         $i=1; $base=$slug; while($root->find($slug)) $slug = $base.'-'.$i++;
 
         $icon       = trim((string)($b['icon'] ?? ''));
+        $color      = trim((string)($b['color'] ?? 'blue'));
         $background = trim((string)($b['background'] ?? ($b['gradient'] ?? '')));
 
         try{
@@ -181,6 +182,7 @@ return [
             'content'=>[
               'title'=>$title,
               'icon'=>$icon,
+              'color'=>$color,
               'background'=>$background,
               'gradient'=>$background,
             ]
@@ -210,6 +212,7 @@ return [
         $payload = [];
         if (isset($b['title']))      $payload['title']      = trim((string)$b['title']);
         if (isset($b['icon']))       $payload['icon']       = trim((string)$b['icon']);
+        if (isset($b['color']))      $payload['color']      = trim((string)$b['color']);
         if (isset($b['background'])) $payload['background'] = trim((string)$b['background']);
         if (isset($b['gradient']) && !isset($b['background'])) $payload['background'] = trim((string)$b['gradient']);
         if (isset($payload['background'])) $payload['gradient'] = $payload['background'];

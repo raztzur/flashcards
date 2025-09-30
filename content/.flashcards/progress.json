@@ -24,14 +24,14 @@
         "updatedAt": "2025-09-27T23:36:12+00:00"
     },
     "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card": {
-        "seen": 10,
+        "seen": 11,
         "correct": 5,
-        "box": 4,
-        "updatedAt": "2025-09-30T13:00:31+00:00",
+        "box": 2,
+        "updatedAt": "2025-09-30T23:31:58+00:00",
         "easiness": 2.48,
         "interval": 1,
-        "repetitions": 1,
-        "dueAt": "2025-10-01T13:00:31+00:00"
+        "repetitions": 0,
+        "dueAt": "2025-10-01T23:31:58+00:00"
     },
     "flashcards\/cat-20250928-002657\/sub-20250928-113029\/1-1": {
         "seen": 10,

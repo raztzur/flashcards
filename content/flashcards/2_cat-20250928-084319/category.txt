@@ -2,6 +2,14 @@ Title: מולקולרית
 
 ----
 
+Description: 
+
+----
+
+Color: yellow
+
+----
+
 Icon: noun-chemical-structure-1553750
 
 ----

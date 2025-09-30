@@ -59,6 +59,72 @@ $initialSub = get('subcategory') ?? get('sub');
     /* מוסתר אבל שומר על הגובה של הקופסה */
     .answer-hidden{ visibility:hidden; pointer-events:none; }
   </style>
+  <script>
+    // Early, robust helpers that don't rely on the big script
+    window.fc_selectSize = function(btn){
+      try{
+        var wrap = document.getElementById('sizeChips');
+        if(!wrap) return false;
+        wrap.querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed','false'); });
+        btn.setAttribute('aria-pressed','true');
+        // store selection on element for later use
+        wrap.setAttribute('data-wanted', btn.getAttribute('data-size') || '10');
+      }catch(e){}
+      return false;
+    };
+    window.fc_onCatChange = function(){
+      try{
+        var sel = document.getElementById('cat');
+        var sub = document.getElementById('sub');
+        if(!sel || !sub) return;
+        var cat = sel.value;
+        // Try reading subcats from the selected option's data-subcats first
+        var opt = sel.options && sel.selectedIndex >=0 ? sel.options[sel.selectedIndex] : null;
+        var list = [];
+        if (opt) {
+          var attr = opt.getAttribute('data-subcats');
+          if (attr) {
+            try { list = JSON.parse(attr) || []; } catch(e) { list = []; }
+          }
+        }
+        // Fallback to FC_DATA if exists and no data-subcats found
+        if ((!list || list.length===0) && window.FC_DATA && Array.isArray(FC_DATA.categories)){
+          var catObj = FC_DATA.categories.find(function(c){ return c.slug === cat; });
+          list = (catObj && Array.isArray(catObj.subcategories)) ? catObj.subcategories : [];
+        }
+        if(!cat){ sub.innerHTML = '<option value="">— בחרי קטגוריה תחילה —</option>'; sub.disabled = true; return; }
+        var opts = ['<option value="">כל תתי־הקטגוריות</option>']
+          .concat(list.map(function(s){ return '<option value="'+s.slug+'">'+s.title+'</option>'; }));
+        sub.innerHTML = opts.join('');
+        sub.disabled = false;
+      }catch(e){}
+    };
+    // Fallback Start: call startSession if present; else reload with auto=1 and selections
+    window.fc_start = function(){
+      try{
+        var catSel = document.getElementById('cat');
+        var subSel = document.getElementById('sub');
+        var sizeWrap = document.getElementById('sizeChips');
+        var pressed = sizeWrap && sizeWrap.querySelector('.chip[aria-pressed="true"]');
+        var qs = [];
+        if (catSel && catSel.value) qs.push('category=' + encodeURIComponent(catSel.value));
+        if (subSel && !subSel.disabled && subSel.value) qs.push('subcategory=' + encodeURIComponent(subSel.value));
+        // If main script is loaded, ensure it sees the wanted by dispatching a click on the pressed chip
+        if (pressed) {
+          try { pressed.dispatchEvent(new MouseEvent('click', {bubbles:true})); } catch(e) {}
+        }
+        if (typeof window.startSession === 'function') {
+          window.startSession();
+          return false;
+        }
+        // Fallback: reload with auto=1 (will auto-start on load), selections preserved
+        qs.push('auto=1');
+        var base = window.location.pathname;
+        window.location.href = base + (qs.length?('?'+qs.join('&')):'');
+        return false;
+      }catch(e){ return false; }
+    };
+  </script>
 </head>
 <body>
 <main class="container">
@@ -71,38 +137,76 @@ $initialSub = get('subcategory') ?? get('sub');
   </header>
 
   <!-- שלב ההגדרות -->
+  <?php
+    $categories = $root->children()->filterBy('intendedTemplate','category');
+    $selectedCat = $initialCat ?? '';
+    $subcategories = null;
+    if ($selectedCat) {
+      if ($catPage = $root->find($selectedCat)) {
+        $subcategories = $catPage->children()->filterBy('intendedTemplate','subcategory');
+      }
+    }
+  ?>
   <section id="setup" class="test-deck" aria-label="הגדרת מבחן">
     <div class="field">
       <label for="cat">קטגוריה</label>
-      <select id="cat">
+      <select id="cat" onchange="fc_onCatChange()">
         <option value="">כל הקטגוריות</option>
+        <?php foreach ($categories as $cat): 
+          $slug=$cat->slug(); 
+          $title=$cat->title()->value(); 
+          $subsJson = [];
+          foreach ($cat->children()->filterBy('intendedTemplate','subcategory') as $s) {
+            $subsJson[] = ['slug'=>$s->slug(), 'title'=>$s->title()->value()];
+          }
+          $subsAttr = htmlspecialchars(json_encode($subsJson, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+        ?>
+          <option value="<?= html($slug) ?>" data-subcats='<?= $subsAttr ?>'<?= $slug===$selectedCat?' selected':'' ?>><?= html($title) ?></option>
+        <?php endforeach; ?>
       </select>
     </div>
 
     <div class="field">
       <label for="sub">תת־קטגוריה</label>
-      <select id="sub" disabled>
-        <option value="">— בחרי קטגוריה תחילה —</option>
+      <?php $hasSub = $subcategories && $subcategories->count()>0; ?>
+      <select id="sub" <?= $hasSub? '':'disabled' ?>>
+        <?php if(!$hasSub): ?>
+          <option value="">— בחרי קטגוריה תחילה —</option>
+        <?php else: ?>
+          <option value="">כל תתי־הקטגוריות</option>
+          <?php foreach ($subcategories as $sub): $slug=$sub->slug(); $title=$sub->title()->value(); ?>
+            <option value="<?= html($slug) ?>"<?= ($initialSub??'')===$slug?' selected':'' ?>><?= html($title) ?></option>
+          <?php endforeach; ?>
+        <?php endif; ?>
       </select>
     </div>
 
     <div class="field">
       <label>כמה כרטיסיות?</label>
       <div id="sizeChips" class="test-size" role="group" aria-label="מספר כרטיסיות לסשן">
-        <button class="chip" data-size="5">5</button>
-        <button class="chip" data-size="10" aria-pressed="true">10</button>
-        <button class="chip" data-size="15">15</button>
-        <button class="chip" data-size="20">20</button>
-        <button class="chip" data-size="30">30</button>
-        <button class="chip" data-size="50">50</button>
+  <button class="chip" data-size="5" onclick="return fc_selectSize(this)">5</button>
+  <button class="chip" data-size="10" aria-pressed="true" onclick="return fc_selectSize(this)">10</button>
+  <button class="chip" data-size="15" onclick="return fc_selectSize(this)">15</button>
+  <button class="chip" data-size="20" onclick="return fc_selectSize(this)">20</button>
+  <button class="chip" data-size="30" onclick="return fc_selectSize(this)">30</button>
+  <button class="chip" data-size="50" onclick="return fc_selectSize(this)">50</button>
       </div>
     </div>
 
     <div class="actions">
-      <button id="start" class="btn">התחילי מבחן</button>
+  <button id="start" class="btn" type="button" onclick="return fc_start()">התחילי מבחן</button>
       <span id="setupMsg" class="form-msg" aria-live="polite"></span>
     </div>
   </section>
+  <script>
+    // אם כבר נבחרה קטגוריה מה-URL/SSR, נמלא את תתי-הקטגוריות מיד כשנוצר ה-DOM
+    (function(){
+      try{
+        var sel = document.getElementById('cat');
+        if (sel && sel.value) { window.fc_onCatChange && window.fc_onCatChange(); }
+      }catch(e){}
+    })();
+  </script>
 
   <!-- תצוגת HUD -->
   <section id="hud" class="panel" style="display:none" aria-label="סטטוס מבחן">
@@ -235,6 +339,25 @@ $initialSub = get('subcategory') ?? get('sub');
 
 <script>
 (function(){
+  // נתוני קטגוריות/תתי־קטגוריות מהשרת (ללא תלות ב-API בצד לקוח)
+  <?php
+    $catsData = [];
+    foreach ($root->children()->filterBy('intendedTemplate','category') as $cat) {
+      $subsArr = [];
+      foreach ($cat->children()->filterBy('intendedTemplate','subcategory') as $sub) {
+        $subsArr[] = [
+          'slug' => $sub->slug(),
+          'title'=> $sub->title()->value(),
+        ];
+      }
+      $catsData[] = [
+        'slug' => $cat->slug(),
+        'title'=> $cat->title()->value(),
+        'subcategories' => $subsArr,
+      ];
+    }
+  ?>
+  const FC_DATA = { categories: <?= json_encode($catsData, JSON_UNESCAPED_UNICODE) ?> };
   /* =========================
      Cloze: {{n}} -> קו תחתון עם מספר
      ========================= */
@@ -252,19 +375,30 @@ $initialSub = get('subcategory') ?? get('sub');
   const $  = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
   async function api(path, opts){
-    const r = await fetch(path, opts);
-    const t = await r.text();
-    try { return JSON.parse(t); } catch { return { ok:false, error: t || r.statusText || ('HTTP '+r.status) }; }
+    try {
+      const r = await fetch(path, opts);
+      const t = await r.text();
+      try {
+        return JSON.parse(t);
+      } catch(eJson) {
+        console.error('[api] JSON parse failed for', path, 'status:', r.status, 'text:', t);
+        return { ok:false, error: t || r.statusText || ('HTTP '+r.status) };
+      }
+    } catch (eNet) {
+      console.error('[api] fetch failed for', path, eNet);
+      return { ok:false, error: String(eNet && eNet.message || eNet) };
+    }
   }
-function escapeHtml(s){
-  return (s || '').replace(/[&<>"']/g, m => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  })[m]);
-}
+  
+  function escapeHtml(s){
+    return (s || '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    })[m]);
+  }
   /* =========================
      Elements
      ========================= */
@@ -336,11 +470,16 @@ function escapeHtml(s){
      טעינת קטגוריות/תתי־קטגוריות למסכים
      ========================= */
   async function loadCategories(){
-    const res = await api('<?= url('categories') ?>');
-    if (!res.ok){ setupMsg.textContent = 'שגיאה בטעינת קטגוריות'; return; }
+    console.debug('[test] Loading categories (local data)…');
+    const list = Array.isArray(FC_DATA.categories) ? FC_DATA.categories : [];
     const opts = ['<option value="">כל הקטגוריות</option>']
-      .concat((res.categories||[]).map(c => `<option value="${c.slug}">${c.title}</option>`));
+      .concat(list.map(c => `<option value="${c.slug}">${c.title}</option>`));
     catSel.innerHTML = opts.join('');
+    if (list.length === 0) {
+      setupMsg.textContent = 'אין קטגוריות זמינות';
+    } else {
+      setupMsg.textContent = '';
+    }
 
     // ברירות מחדל מה־URL (נשלחות מהשרת לתוך העמוד)
     const initCat = <?= json_encode($initialCat ?? '') ?>;
@@ -353,10 +492,8 @@ function escapeHtml(s){
   }
   async function loadSubcats(cat){
     if (!cat){ subSel.innerHTML = '<option value="">— בחרי קטגוריה תחילה —</option>'; subSel.disabled = true; return; }
-    subSel.disabled = true; subSel.innerHTML = '<option value="">טוען…</option>';
-    const res = await api('<?= url('subcats') ?>?category='+encodeURIComponent(cat));
-    if (!res.ok){ subSel.innerHTML = '<option value="">שגיאה</option>'; return; }
-    const list = res.subcategories || [];
+    const catObj = (FC_DATA.categories || []).find(c => c.slug === cat);
+    const list = (catObj && Array.isArray(catObj.subcategories)) ? catObj.subcategories : [];
     const opts = ['<option value="">כל תתי־הקטגוריות</option>']
       .concat(list.map(s => `<option value="${s.slug}">${s.title}</option>`));
     subSel.innerHTML = opts.join('');
@@ -369,11 +506,18 @@ function escapeHtml(s){
      ========================= */
   let wanted = 10;
   sizeChips.addEventListener('click', (e)=>{
+    e.preventDefault();
     const chip = e.target.closest('.chip'); if (!chip) return;
     wanted = parseInt(chip.dataset.size,10) || 10;
     sizeChips.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed','false'));
     chip.setAttribute('aria-pressed','true');
   });
+  // קבע ברירת מחדל לפי הכפתור המסומן כבר ב-HTML
+  const defaultPressed = sizeChips && sizeChips.querySelector('.chip[aria-pressed="true"]');
+  if (defaultPressed) {
+    const n = parseInt(defaultPressed.dataset.size, 10);
+    if (!isNaN(n)) wanted = n;
+  }
 
   /* =========================
      בחירת קלפים בעדיפות Due/טעויות
@@ -1013,34 +1157,7 @@ function escapeHtml(s){
       labelOverlay.appendChild(anchor);
     });
   }
-      
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'תשובה...';
-      input.style.border = '1px solid #ddd';
-      input.style.borderRadius = '4px';
-      input.style.padding = '4px';
-      input.style.fontSize = '12px';
-      input.style.textAlign = 'right';
-      input.dir = 'rtl';
-      
-      box.appendChild(label);
-      box.appendChild(input);
-      labelOverlay.appendChild(box);
-      
-      // נקודת העוגן
-      const anchor = document.createElement('div');
-      anchor.style.position = 'absolute';
-      anchor.style.left = (ax - 4) + 'px';
-      anchor.style.top = (ay - 4) + 'px';
-      anchor.style.width = '8px';
-      anchor.style.height = '8px';
-      anchor.style.background = '#dc2626';
-      anchor.style.borderRadius = '50%';
-      anchor.style.zIndex = '3';
-      labelOverlay.appendChild(anchor);
-    });
-  }
+
 
   let selectedTFAnswer = null;
 
@@ -1129,10 +1246,14 @@ function escapeHtml(s){
       // בחירה חדשה
       selectedQuality = quality;
       clearQualitySelection();
-      button.classList.add('selected');
+      if (button && typeof button.classList !== 'undefined') {
+        button.classList.add('selected');
+      }
     }
     saveCardState(); // שמירת המצב
-  }  function handleSpaceKey() {
+  }
+  
+  function handleSpaceKey() {
     // פעולה שונה לכל סוג שאלה
     const currentCard = deck[pos];
     if (!currentCard) return;
@@ -1397,10 +1518,9 @@ const putProgress = (id, row) =>
     const cat = urlParams.get('category');
     const sub = urlParams.get('subcategory') || urlParams.get('sub');
     
+    // לעולם לא לנווט לעמוד קטגוריה בלבד
     if (cat && sub) {
       window.location.href = `<?= url('flashcards') ?>/${encodeURIComponent(cat)}/${encodeURIComponent(sub)}`;
-    } else if (cat) {
-      window.location.href = `<?= url('flashcards') ?>/${encodeURIComponent(cat)}`;
     } else {
       window.location.href = '<?= url('flashcards') ?>';
     }
@@ -1408,9 +1528,15 @@ const putProgress = (id, row) =>
 
   // כפתור חזרה לכרטיסים מעמוד הסיום
   backToCards.addEventListener('click', ()=>{
-    finish.style.display='none';
-    stage.style.display='';
-    hud.style.display='';
+    // ניווט חזרה לרשימת הכרטיסים (עמוד ראשי או תת-קטגוריה אם קיימת)
+    const urlParams = new URLSearchParams(location.search);
+    const cat = urlParams.get('category');
+    const sub = urlParams.get('subcategory') || urlParams.get('sub');
+    if (cat && sub) {
+      window.location.href = `<?= url('flashcards') ?>/${encodeURIComponent(cat)}/${encodeURIComponent(sub)}`;
+    } else {
+      window.location.href = '<?= url('flashcards') ?>';
+    }
   });
 
   // פונקציה להסתרת תשובה (עבור הכפתור הקטן)
@@ -1604,6 +1730,12 @@ const putProgress = (id, row) =>
      התחלת סשן
      ========================= */
   async function startSession(){
+    // ודא שכמות הכרטיסיות מסונכרנת מה-UI
+    try {
+      const pressedChip = sizeChips && sizeChips.querySelector('.chip[aria-pressed="true"]');
+      const domWanted = pressedChip ? parseInt(pressedChip.dataset.size, 10) : parseInt((sizeChips && sizeChips.getAttribute('data-wanted'))||'',10);
+      if (!isNaN(domWanted) && domWanted>0) wanted = domWanted;
+    } catch(e){}
     setupMsg.textContent = 'טוען…';
     const cat = catSel.value || '';
     const sub = subSel.value || '';
@@ -1646,13 +1778,19 @@ const putProgress = (id, row) =>
   }
 
   startBtn.addEventListener('click', startSession);
+  // הפוך לפונקציה גלובלית עבור fallbackים מוקדמים
+  window.startSession = startSession;
 
   /* =========================
      Init
      ========================= */
+  const AUTO = <?= json_encode((($initialCat ?? '') !== '' && (get('auto')==='1' || get('auto')==='true'))) ?>;
   loadCategories().then(()=>{
     // תמיד להראות את מסך ההגדרות - המשתמש יבחר כמה שאלות רוצה
     // אפילו אם הגיע עם פרמטרים של קטגוריה/תת-קטגוריה
+    if (AUTO && catSel && catSel.value) {
+      startSession();
+    }
   });
 
 })();

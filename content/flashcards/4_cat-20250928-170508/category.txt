@@ -2,7 +2,15 @@ Title: פיזיולוגיה
 
 ----
 
-Icon: 
+Description: 
+
+----
+
+Color: pink
+
+----
+
+Icon: noun-brain-1553728
 
 ----
 

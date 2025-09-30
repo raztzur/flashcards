@@ -120,6 +120,29 @@
       const res=await API.deleteCategory(slug); if(!res.ok) return alert(res.error||'שגיאה');
       await loadAll(); render();
     }));
+    
+    // תמיכה בתפריט נפתח
+    document.querySelectorAll('[data-menu-toggle]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = btn.nextElementSibling;
+        const isOpen = dropdown.style.display === 'block';
+        
+        // סגור את כל התפריטים הפתוחים
+        document.querySelectorAll('[data-menu-dropdown]').forEach(d => d.style.display = 'none');
+        
+        // פתח/סגור את התפריט הנוכחי
+        if (!isOpen) {
+          dropdown.style.display = 'block';
+        }
+      });
+    });
+    
+    // סגירת תפריטים בלחיצה מחוץ להם
+    document.addEventListener('click', () => {
+      document.querySelectorAll('[data-menu-dropdown]').forEach(d => d.style.display = 'none');
+    });
+    
     $('#createCat')?.addEventListener('click', async ()=>{
       const input=$('#newCatTitle'); const title=(input?.value||'').trim(); const msg=$('#catMsg');
       if(!title){ msg.textContent='נא להזין שם'; input?.focus(); return; }

@@ -25,6 +25,18 @@ columns:
             type: textarea
             label: Description
             
+          color:
+            type: select
+            label: Category Color
+            options:
+              pink: ורוד (#ffcadc)
+              yellow: צהוב (#fbe74e)
+              blue: כחול (#9dc4f5)
+              green: ירוק (#c2ddc2)
+              red: אדום (#ed6f60)
+            default: blue
+            help: בחר צבע לקטגוריה מהפלטה המותאמת אישית
+            
       stats:
         type: info
         text: |
