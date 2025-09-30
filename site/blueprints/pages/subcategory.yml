@@ -26,15 +26,11 @@ columns:
             label: Description
             
       stats:
-        type: stats
-        reports:
-          - label: Total Cards
-            query: page.children
-          - label: Free Text Cards
-            query: page.children.filterBy('type', 'free')
-          - label: Multiple Choice Cards
-            query: page.children.filterBy('type', 'mc')
-          - label: True/False Cards
-            query: page.children.filterBy('type', 'tf')
-          - label: Cloze Cards
-            query: page.children.filterBy('type', 'cloze')
+        type: info
+        text: |
+          סטטיסטיקות תת-קטגוריה:
+          - סה"כ כרטיסיות: {{ page.children.count }}
+          - כרטיסיות טקסט חופשי: {{ page.children.filterBy('type', 'free').count }}
+          - כרטיסיות רב-ברירה: {{ page.children.filterBy('type', 'mc').count }}
+          - כרטיסיות נכון/לא נכון: {{ page.children.filterBy('type', 'tf').count }}
+          - כרטיסיות השלמה: {{ page.children.filterBy('type', 'cloze').count }}

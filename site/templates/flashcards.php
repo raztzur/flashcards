@@ -83,9 +83,15 @@
             </div>
           </div>
           <div class="actions">
-            <a class="btn icon ghost" href="<?= url('flashcards/add') . '?category=' . urlencode($cat->slug()) ?>" title="הוסף שאלה">＋</a>
-            <button class="btn icon ghost" data-edit title="עריכה">✎</button>
-            <button class="btn icon ghost" data-delete title="מחיקה">🗑️</button>
+            <a class="icon-btn" href="<?= url('flashcards/add') . '?category=' . urlencode($cat->slug()) ?>" title="הוסף כרטיסייה">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-width="2" /></svg>
+            </a>
+            <button class="icon-btn" data-edit title="עריכה" aria-label="עריכה">
+              <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            </button>
+            <button class="icon-btn danger" data-delete title="מחיקה" aria-label="מחיקה">
+              <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
           </div>
         </div>
 
@@ -95,9 +101,11 @@
             <span><?= $count ?> כרטיסיות</span>
             <span>לתרגול היום: <strong data-due>…</strong></span>
           </div>
-          <a class="btn icon ghost testbtn"
+          <a class="icon-btn"
              href="<?= url('flashcards/test') . '?category=' . urlencode($cat->slug()) . '&auto=1' ?>"
-             title="מבחן בקטגוריה">▶</a>
+             title="מבחן בקטגוריה" aria-label="מבחן בקטגוריה">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </a>
         </div>
 
         <!-- עריכה inline -->
@@ -178,14 +186,34 @@
     });
 
     let armed=false, timer=null;
-    function disarm(){ armed=false; delBtn.classList.remove('danger'); delBtn.textContent='🗑️'; if (timer){ clearTimeout(timer); timer=null; } }
+    function disarm(){ 
+      armed=false; 
+      delBtn.classList.remove('danger'); 
+      delBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>'; 
+      if (timer){ clearTimeout(timer); timer=null; } 
+    }
     delBtn.addEventListener('click', async ()=>{
-      if (!armed){ armed=true; delBtn.classList.add('danger'); delBtn.textContent='בטוח?'; timer=setTimeout(disarm,3000); return; }
+      if (!armed){ 
+        armed=true; 
+        delBtn.classList.add('danger'); 
+        delBtn.innerHTML='בטוח?'; 
+        timer=setTimeout(disarm,3000); 
+        return; 
+      }
       const res = await postJSON('<?= url('categories/delete') ?>', { slug });
       if(!res.ok){ alert('שגיאה: '+(res.error||'')); disarm(); return; }
       row.remove();
     });
     document.addEventListener('click', (ev)=>{ if (!delBtn.contains(ev.target)) disarm(); });
+    
+    // וידוא שהכפתור במצב רגיל בטעינת הדף
+    document.addEventListener('DOMContentLoaded', () => {
+      if (delBtn) {
+        delBtn.disabled = false;
+        delBtn.style.opacity = '';
+        delBtn.style.pointerEvents = '';
+      }
+    });
   });
 </script>
 </body>

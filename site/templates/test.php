@@ -5,7 +5,6 @@ header('Content-Type: text/html; charset=utf-8');
 $root = page('flashcards');
 $initialCat = get('category'); // /flashcards/test?category=<slug>&auto=1
 $initialSub = get('subcategory') ?? get('sub');
-$autoStart  = get('auto') === '1';
 ?>
 <!doctype html>
 <html lang="he" dir="rtl">
@@ -13,7 +12,6 @@ $autoStart  = get('auto') === '1';
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>מבחן</title>
-</head>
   <?= snippet('global-head') ?>
   <style>
     /* CSS variables are now defined in the main style.css file */
@@ -37,6 +35,26 @@ $autoStart  = get('auto') === '1';
 
     /* תוכן התשובה מגלול בתוך הקופסה הקבועה */
     #aHtml{ max-height:100%; overflow:auto; }
+
+    /* סגנונות לכפתורי איכות מסומנים */
+    .quality-bad.selected { 
+      background-color: #dc3545; 
+      color: white; 
+      border-color: #c82333; 
+      box-shadow: 0 0 8px rgba(220, 53, 69, 0.5);
+    }
+    .quality-mid.selected { 
+      background-color: #ffc107; 
+      color: #212529; 
+      border-color: #e0a800; 
+      box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+    }
+    .quality-good.selected { 
+      background-color: #28a745; 
+      color: white; 
+      border-color: #1e7e34; 
+      box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+    }
 
     /* מוסתר אבל שומר על הגובה של הקופסה */
     .answer-hidden{ visibility:hidden; pointer-events:none; }
@@ -99,13 +117,13 @@ $autoStart  = get('auto') === '1';
   </section>
 
   <!-- שלב הבחינה -->
-  <section id="stage" style="display:none" aria-label="כרטיס שאלה">
-    <!-- קופסת תוכן השאלה והתשובה -->
+  <section id="stage" style="display:none" aria-label="כרטיסייה">
+    <!-- קופסת תוכן הכרטיסייה -->
     <div class="qa-container test-deck">
       <div id="card" class="test-card" tabindex="0" aria-live="polite">
         <!-- אזור השאלה -->
         <div class="question-section">
-          <div id="qHtml"><p>—</p></div>
+          <div id="qHtml" class="ck-content"><p>—</p></div>
         </div>
         
         <!-- אזור האינטראקציה - משתנה לפי סוג השאלה -->
@@ -114,7 +132,10 @@ $autoStart  = get('auto') === '1';
           <!-- עבור שאלה פתוחה -->
           <div id="freeArea" class="free-interaction" style="display:none;">
             <button id="flip" class="btn">הצג תשובה</button>
-            <div id="aHtml" class="answer-display answer-hidden"><p>—</p></div>
+            <div id="aHtml" class="answer-display ck-content answer-hidden">
+              <button class="hide-answer-btn" id="hideAnswerBtn">✕</button>
+              <p>—</p>
+            </div>
           </div>
           
           <!-- עבור שאלה אמריקאית -->
@@ -146,29 +167,57 @@ $autoStart  = get('auto') === '1';
 
     <!-- קופסת בקרות נפרדת -->
     <div class="controls-container">
-      <!-- כפתורי איכות - יופיעו רק אחרי שהמשתמש השיב -->
-      <div id="qualitySection" class="quality-row" style="display:none;">
-        <button id="markWrong" class="btn quality-bad">טעיתי</button>
-        <button id="markPartial" class="btn quality-mid">חלקית</button>
-        <button id="markRight" class="btn quality-good">צדקתי</button>
-        <button id="undo" class="btn ghost" title="בטלי את הסימון האחרון">בטלי</button>
-      </div>
-
       <div class="test-nav">
-        <button id="prev" class="btn ghost">← הקודם</button>
-        <div><span id="counter2">0/0</span></div>
-        <button id="next" class="btn">הבא →</button>
+        <button id="prev" class="btn ghost">→ הקודם</button>
+        <!-- כפתורי איכות - יופיעו רק לשאלות פתוחות -->
+        <div id="qualitySection" class="quality-row" style="opacity:0; pointer-events:none;">
+          <button id="markWrong" class="btn quality-bad" disabled>טעיתי</button>
+          <button id="markPartial" class="btn quality-mid" disabled>חלקית</button>
+          <button id="markRight" class="btn quality-good" disabled>צדקתי</button>
+        </div>
+        <button id="next" class="btn">הבא ←</button>
       </div>
     </div>
   </section>
 
   <!-- סיום -->
-  <section id="finish" class="test-deck" style="display:none" aria-label="סיכום מבחן">
-    <h2>כל הכבוד! סיימת סשן</h2>
-    <p>נסקרו <strong id="doneCount">0</strong> כרטיסיות.</p>
-    <div class="actions">
-      <button id="restart" class="btn">סשן חדש</button>
-      <a href="<?= url('flashcards') ?>" class="btn ghost">חזרה לבית</a>
+  <section id="finish" style="display:none" aria-label="סיכום מבחן">
+    <!-- קופסת תוכן הסיום בגובה 620px -->
+    <div class="qa-container test-deck finish-container">
+      <div class="test-card-stats">
+        <h2>כל הכבוד! סיימת סשן</h2>
+        
+        <!-- סטטיסטיקות מפורטות -->
+        <div style="margin: 24px 0; padding: 20px; background: #f8f9fa; border-radius: 12px; max-width: 400px; margin-left: auto; margin-right: auto;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: center;">
+            <div>
+              <div style="font-size: 24px; font-weight: bold; color: #2e7d32;" id="totalCards">0</div>
+              <div style="font-size: 14px; color: #666;">כרטיסיות נבדקו</div>
+            </div>
+            <div>
+              <div style="font-size: 24px; font-weight: bold; color: #1976d2;" id="avgQuality">-</div>
+              <div style="font-size: 14px; color: #666;">ציון ממוצע</div>
+            </div>
+            <div>
+              <div style="font-size: 20px; font-weight: bold; color: #f57c00;" id="timeSpent">00:00</div>
+              <div style="font-size: 14px; color: #666;">זמן סשן</div>
+            </div>
+            <div>
+              <div style="font-size: 20px; font-weight: bold; color: #7b1fa2;" id="cardsPerMin">0</div>
+              <div style="font-size: 14px; color: #666;">כרטיסיות לדקה</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- קופסת בקרות נפרדת -->
+    <div class="controls-container">
+      <div class="test-nav">
+        <button id="backToCards" class="btn ghost">→ חזרה לכרטיסים</button>
+        <button id="restartFromFinish" class="btn">סשן חדש</button>
+        <button id="exitSession" class="btn ghost">יציאה</button>
+      </div>
     </div>
   </section>
 
@@ -224,8 +273,10 @@ function escapeHtml(s){
   const hudCat   = $('#hudCat');
   const pbar     = $('#pbar');
   const counter  = $('#counter');
-  const counter2 = $('#counter2');
-  const doneCount= $('#doneCount');
+  const totalCards = $('#totalCards');
+  const avgQuality = $('#avgQuality');
+  const timeSpent = $('#timeSpent');
+  const cardsPerMin = $('#cardsPerMin');
 
   const cardEl   = $('#card');      // מעטפת הכרטיס
   const qHtml    = $('#qHtml');     // אזור השאלה
@@ -243,6 +294,7 @@ function escapeHtml(s){
   const tfFalse  = $('#tfFalse');
   const tfSubmit = $('#tfSubmit');
   const clozeSubmit = $('#clozeSubmit');
+  const hideAnswerBtn = $('#hideAnswerBtn');
   
   // תוצאות
   const aHtml    = $('#aHtml');     
@@ -257,8 +309,9 @@ function escapeHtml(s){
   const markRight= $('#markRight');
   const markWrong= $('#markWrong');
   const markPartial=$('#markPartial');
-  const undoBtn  = $('#undo');
-  const restartBtn=$('#restart');
+  const backToCards=$('#backToCards');
+  const restartFromFinish=$('#restartFromFinish');
+  const exitSession=$('#exitSession');
 
 
 
@@ -357,8 +410,269 @@ function escapeHtml(s){
      ========================= */
   let deck=[], pos=0, startTs=0, timerInt=null, progressCache={}, undoStack=[];
   
-  // שמירת מצב מלא של כל כרטיס (תשובות + אם כבר נבדק)
+  // שמירת מצב מלא של כל כרטיסייה (תשובות + אם כבר נבדק)
   let cardStates = {};
+  let selectedQuality = null; // לשמירת איכות נבחרת בשאלות פתוחות
+  
+  // פונקציות ייעודיות לcloze
+  function saveClozeState() {
+    const currentCard = deck[pos];
+    if (!currentCard) return;
+    
+    const cardKey = `${pos}_${currentCard.id || pos}`;
+    const inputs = qHtml.querySelectorAll('.cloze-blank input');
+    const userAnswers = {};
+    
+    inputs.forEach(input => {
+      const blankId = input.parentElement.dataset.id;
+      userAnswers[blankId] = input.value.trim();
+    });
+    
+    const clozeSubmitElement = document.getElementById('clozeSubmit');
+    const clozeResultElement = document.getElementById('clozeResult');
+    
+    let state = cardStates[cardKey] || {
+      type: 'cloze',
+      hasAnswered: false,
+      isSubmitted: false,
+      userAnswers: {}
+    };
+    
+    state.userAnswers = userAnswers;
+    
+    // בדיקה אם השאלה הוגשה
+    if (clozeSubmitElement && clozeSubmitElement.style.display === 'none' && 
+        clozeResultElement && clozeResultElement.innerHTML.trim()) {
+      state.isSubmitted = true;
+      state.resultHTML = clozeResultElement.innerHTML;
+      state.resultClass = clozeResultElement.className;
+    }
+    
+    cardStates[cardKey] = state;
+    console.log('Cloze saved:', cardKey, state);
+  }
+  
+  function loadClozeState() {
+    const currentCard = deck[pos];
+    if (!currentCard) return;
+    
+    const cardKey = `${pos}_${currentCard.id || pos}`;
+    const savedState = cardStates[cardKey];
+    
+    console.log('Loading cloze state:', cardKey, savedState);
+    
+    if (!savedState) return;
+    
+    const inputs = qHtml.querySelectorAll('.cloze-blank input');
+    const clozeSubmitBtn = document.getElementById('clozeSubmit');
+    const clozeResultDiv = document.getElementById('clozeResult');
+    
+    // שחזור התשובות בכל מקרה
+    inputs.forEach(input => {
+      const blankId = input.parentElement.dataset.id;
+      if (savedState.userAnswers && savedState.userAnswers[blankId] !== undefined) {
+        input.value = savedState.userAnswers[blankId];
+      }
+    });
+    
+    // אם השאלה הוגשה - הצגת מצב submitted
+    if (savedState.isSubmitted && savedState.resultHTML) {
+      inputs.forEach(input => input.disabled = true);
+      if (clozeResultDiv) {
+        clozeResultDiv.innerHTML = savedState.resultHTML;
+        clozeResultDiv.className = savedState.resultClass || 'result-display';
+        clozeResultDiv.style.display = '';
+      }
+      if (clozeSubmitBtn) {
+        clozeSubmitBtn.style.display = 'none';
+      }
+      console.log('Cloze loaded as submitted');
+    } else {
+      console.log('Cloze loaded as draft');
+    }
+  }
+  
+  // פונקציות שמירה וטעינה של מצב כרטיסים
+  function saveCardState() {
+    const currentCard = deck[pos];
+    if (!currentCard) return;
+    
+    const cardKey = `${pos}_${currentCard.id || pos}`;
+    const type = currentCard.type || 'free';
+    
+    // אל תשמור מצב עבור cloze - זה מטופל בנפרד
+    if (type === 'cloze') return;
+    
+    // התחלה עם מצב קיים או יצירת מצב חדש
+    let state = cardStates[cardKey] || {
+      type: type,
+      hasAnswered: false,
+      isSubmitted: false
+    };
+    
+    // עדכון הtype למקרה של מצב חדש
+    state.type = type;
+    
+    switch(type) {
+      case 'free':
+        state.answerVisible = !aHtml.classList.contains('answer-hidden');
+        state.selectedQuality = selectedQuality; // שמירת איכות נבחרת
+        break;
+        
+      case 'mc':
+        const selectedMC = mcArea.querySelector('.mc-option.selected');
+        if (selectedMC) {
+          state.selectedIndex = parseInt(selectedMC.dataset.index);
+          state.isSubmitted = mcSubmit.style.display === 'none';
+          state.isCorrect = selectedMC.dataset.correct === 'true';
+        }
+        break;
+        
+      case 'tf':
+        if (selectedTFAnswer !== null) {
+          state.selectedAnswer = selectedTFAnswer;
+          state.isSubmitted = tfSubmit.style.display === 'none';
+          const correctAnswer = tfTrue.dataset.correct === 'true';
+          state.isCorrect = selectedTFAnswer === correctAnswer;
+          if (state.isSubmitted) {
+            state.resultMessage = tfResult.innerHTML;
+          }
+        }
+        break;
+        
+      case 'cloze':
+        const inputs = qHtml.querySelectorAll('.cloze-blank input');
+        const userAnswers = {};
+        inputs.forEach(input => {
+          const blankId = input.parentElement.dataset.id;
+          userAnswers[blankId] = input.value.trim();
+        });
+        
+        const clozeSubmitElement = document.getElementById('clozeSubmit');
+        const clozeResultElement = document.getElementById('clozeResult');
+        
+        state.userAnswers = userAnswers;
+        state.isSubmitted = (clozeSubmitElement && clozeSubmitElement.style.display === 'none') || 
+                          (clozeResultElement && clozeResultElement.style.display !== 'none');
+        if (state.isSubmitted && clozeResultElement && clozeResultElement.innerHTML) {
+          state.resultHTML = clozeResultElement.innerHTML;
+          state.resultClass = clozeResultElement.className;
+        }
+        console.log('Cloze save - userAnswers:', userAnswers, 'isSubmitted:', state.isSubmitted, 
+                   'submitDisplay:', clozeSubmitElement ? clozeSubmitElement.style.display : 'null', 
+                   'resultDisplay:', clozeResultElement ? clozeResultElement.style.display : 'null');
+        break;
+    }
+    
+    cardStates[cardKey] = state;
+    console.log('Saved state for card', cardKey, state);
+  }
+
+  function loadCardState() {
+    const currentCard = deck[pos];
+    if (!currentCard) return;
+    
+    const cardKey = `${pos}_${currentCard.id || pos}`;
+    const savedState = cardStates[cardKey];
+    
+    console.log('Loading state for card', cardKey, savedState);
+    
+    if (!savedState) return;
+    
+    const type = currentCard.type || 'free';
+    
+    switch(type) {
+      case 'free':
+        if (savedState.answerVisible) {
+          aHtml.classList.remove('answer-hidden');
+          flipBtn.style.display = 'none'; // הסתר את הכפתור הראשי
+          showQualityButtons();
+          
+          // שחזור איכות נבחרת
+          if (savedState.selectedQuality !== null && savedState.selectedQuality !== undefined) {
+            selectedQuality = savedState.selectedQuality;
+            clearQualitySelection();
+            
+            // סימון הכפתור הנכון
+            if (selectedQuality === 2) markWrong.classList.add('selected');
+            else if (selectedQuality === 3) markPartial.classList.add('selected');
+            else if (selectedQuality === 4) markRight.classList.add('selected');
+          }
+        }
+        break;
+        
+      case 'mc':
+        if (savedState.selectedIndex !== undefined) {
+          setTimeout(() => {
+            const option = mcArea.querySelector(`[data-index="${savedState.selectedIndex}"]`);
+            if (option) {
+              option.classList.add('selected');
+              mcSubmit.disabled = false;
+              
+              if (savedState.isSubmitted) {
+                const allOptions = mcArea.querySelectorAll('.mc-option');
+                allOptions.forEach(opt => {
+                  opt.onclick = null;
+                  opt.style.pointerEvents = 'none';
+                  if (opt.dataset.correct === 'true') {
+                    opt.classList.add('correct');
+                  } else if (opt.classList.contains('selected') && opt.dataset.correct !== 'true') {
+                    opt.classList.add('incorrect');
+                  }
+                });
+                
+                mcResult.innerHTML = savedState.isCorrect ? 
+                  '<strong style="color: green;">✓ תשובה נכונה!</strong>' : 
+                  '<strong style="color: red;">✗ תשובה שגויה</strong>';
+                mcResult.className = 'result-display ' + (savedState.isCorrect ? 'result-correct' : 'result-incorrect');
+                mcResult.style.display = '';
+                mcSubmit.style.display = 'none';
+              }
+            }
+          }, 50);
+        }
+        break;
+        
+      case 'tf':
+        if (savedState.selectedAnswer !== undefined) {
+          selectedTFAnswer = savedState.selectedAnswer;
+          
+          setTimeout(() => {
+            if (savedState.selectedAnswer) {
+              tfTrue.classList.add('selected');
+            } else {
+              tfFalse.classList.add('selected');
+            }
+            
+            tfSubmit.disabled = false;
+            
+            if (savedState.isSubmitted) {
+              if (savedState.selectedAnswer) {
+                tfTrue.classList.add(savedState.isCorrect ? 'result-correct' : 'result-incorrect');
+                tfFalse.classList.remove('selected');
+              } else {
+                tfFalse.classList.add(savedState.isCorrect ? 'result-correct' : 'result-incorrect');
+                tfTrue.classList.remove('selected');
+              }
+              
+              tfTrue.onclick = null;
+              tfFalse.onclick = null;
+              tfTrue.style.pointerEvents = 'none';
+              tfFalse.style.pointerEvents = 'none';
+              tfSubmit.style.display = 'none';
+              
+              tfResult.innerHTML = savedState.resultMessage || (savedState.isCorrect ? 
+                '<strong style="color: green;">✓ תשובה נכונה!</strong>' : 
+                '<strong style="color: red;">✗ תשובה שגויה</strong>');
+              tfResult.className = 'result-display ' + (savedState.isCorrect ? 'result-correct' : 'result-incorrect');
+              tfResult.style.display = '';
+            }
+          }, 50);
+        }
+        break;
+    }
+  }
+
   function setPbar(){ const pct = deck.length ? (pos/deck.length)*100 : 0; pbar.style.width = pct.toFixed(1)+'%'; }
   function tickTimer(){
     const s=Math.max(0,Math.floor((Date.now()-startTs)/1000));
@@ -375,7 +689,33 @@ function escapeHtml(s){
       finish.style.display='';
       clearInterval(timerInt); timerInt=null;
       pbar.style.width='100%';
-      doneCount.textContent = String(deck.length);
+      
+      // חישוב סטטיסטיקות
+      const sessionTime = Math.floor((Date.now() - startTs) / 1000);
+      const minutes = Math.floor(sessionTime / 60);
+      const seconds = sessionTime % 60;
+      const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      // חישוב ציון ממוצע מהמצבים השמורים
+      let totalQuality = 0;
+      let qualityCount = 0;
+      for (const state of Object.values(cardStates)) {
+        if (state.selectedQuality !== null && state.selectedQuality !== undefined) {
+          totalQuality += state.selectedQuality;
+          qualityCount++;
+        }
+      }
+      const avgQualityValue = qualityCount > 0 ? (totalQuality / qualityCount).toFixed(1) : '-';
+      
+      // כרטיסיות לדקה
+      const cardsPerMinValue = minutes > 0 ? Math.round(deck.length / minutes) : deck.length;
+      
+      // עדכון התצוגה
+      totalCards.textContent = String(deck.length);
+      avgQuality.textContent = avgQualityValue;
+      timeSpent.textContent = timeStr;
+      cardsPerMin.textContent = String(cardsPerMinValue);
+      
       return;
     }
     const c = deck[pos]; 
@@ -390,7 +730,7 @@ function escapeHtml(s){
 
     // איפוס כל האזורים
     hideAllInteractionAreas();
-    qualitySection.style.display = 'none'; // מסתירים את כפתורי האיכות
+    hideQualityButtons(); // איפוס כפתורי האיכות
     
     // הצגת האזור המתאים לסוג השאלה
     switch(type) {
@@ -410,9 +750,13 @@ function escapeHtml(s){
         renderFreeQuestion(c);
     }
 
+    // טעינת מצב שמור אחרי רינדור - רק לסוגים שלא cloze
+    if (type !== 'cloze') {
+      setTimeout(() => loadCardState(), 100);
+    }
+
     // מונים/פס התקדמות
     counter.textContent = (pos+1)+'/'+deck.length;
-    counter2.textContent = counter.textContent;
     setPbar();
   }
 
@@ -428,7 +772,10 @@ function escapeHtml(s){
     freeArea.style.display = '';
     aHtml.innerHTML = c.answer || '';
     aHtml.classList.add('answer-hidden');
-    flipBtn.textContent = 'הצג תשובה';
+    freeArea.classList.remove('answer-shown'); // וודא שהכפתור flip נראה
+    flipBtn.style.display = ''; // איפוס מפורש של הכפתור
+    selectedQuality = null; // איפוס בחירת איכות
+    clearQualitySelection(); // איפוס צבעים
   }
 
   // שאלה אמריקאית
@@ -460,6 +807,7 @@ function escapeHtml(s){
         // בחירת האפשרות הנוכחית
         optDiv.classList.add('selected');
         mcSubmit.disabled = false;
+        saveCardState(); // שמירת הבחירה
       };
       
       optionsContainer.appendChild(optDiv);
@@ -502,39 +850,28 @@ function escapeHtml(s){
   function renderClozeQuestion2(c) {
     clozeArea.style.display = '';
     
-    // בדיקת מצב שמור של הכרטיס
-    const cardKey = `${pos}_${c.id || pos}`;
-    const savedState = cardStates[cardKey];
-    
     const inputs = qHtml.querySelectorAll('.cloze-blank input');
     
-    if (savedState && savedState.isSubmitted) {
-      // הכרטיס כבר נבדק - הצגת המצב הסופי
-      inputs.forEach(input => {
-        const blankId = input.parentElement.dataset.id;
-        input.value = savedState.userAnswers[blankId] || '';
-        input.disabled = true;
-      });
+    // הגדרת event listeners לשמירה אוטומטית
+    inputs.forEach(input => {
+      // הסרת listeners קיימים
+      input.removeEventListener('input', saveClozeState);
+      // הוספת listener חדש
+      input.addEventListener('input', saveClozeState);
       
-      // הצגת התוצאה השמורה
-      clozeResult.innerHTML = savedState.resultHTML;
-      clozeResult.className = savedState.resultClass;
-      clozeResult.style.display = '';
-      clozeSubmit.style.display = 'none';
-    } else {
-      // הכרטיס עדיין לא נבדק - מצב עריכה
-      inputs.forEach(input => {
-        const blankId = input.parentElement.dataset.id;
-        input.value = (savedState?.userAnswers && savedState.userAnswers[blankId]) || '';
-        input.disabled = false;
-        input.style.backgroundColor = '';
-        input.style.borderColor = '';
-        input.style.color = '';
-      });
-      
-      clozeSubmit.style.display = 'block';
-      clozeResult.style.display = 'none';
-    }
+      // איפוס מצב
+      input.disabled = false;
+      input.style.backgroundColor = '';
+      input.style.borderColor = '';
+      input.style.color = '';
+    });
+    
+    // הצגת כפתור וכיסוי תוצאה
+    clozeSubmit.style.display = 'block';
+    clozeResult.style.display = 'none';
+    
+    // טעינת מצב שמור
+    setTimeout(() => loadClozeState(), 50);
   }
 
   let selectedTFAnswer = null;
@@ -553,6 +890,7 @@ function escapeHtml(s){
     }
     
     tfSubmit.disabled = false;
+    saveCardState(); // שמירת הבחירה
   }
 
   function submitTFAnswer() {
@@ -589,14 +927,44 @@ function escapeHtml(s){
   }
 
   function showQualityButtons() {
-    qualitySection.style.display = '';
+    qualitySection.style.opacity = '1';
+    qualitySection.style.pointerEvents = 'auto';
+    markWrong.disabled = false;
+    markPartial.disabled = false;
+    markRight.disabled = false;
+    selectedQuality = null; // איפוס בחירה
+    clearQualitySelection(); // איפוס צבעים
   }
-
+  
   function hideQualityButtons() {
-    qualitySection.style.display = 'none';
+    qualitySection.style.opacity = '0';
+    qualitySection.style.pointerEvents = 'none';
+    markWrong.disabled = true;
+    markPartial.disabled = true;
+    markRight.disabled = true;
+    selectedQuality = null; // איפוס בחירה
+    clearQualitySelection(); // איפוס צבעים
   }
 
-  function handleSpaceKey() {
+  function clearQualitySelection() {
+    markWrong.classList.remove('selected');
+    markPartial.classList.remove('selected'); 
+    markRight.classList.remove('selected');
+  }
+
+  function selectQuality(quality, button) {
+    if (selectedQuality === quality) {
+      // לחיצה חוזרת - ביטול הבחירה
+      selectedQuality = null;
+      clearQualitySelection();
+    } else {
+      // בחירה חדשה
+      selectedQuality = quality;
+      clearQualitySelection();
+      button.classList.add('selected');
+    }
+    saveCardState(); // שמירת המצב
+  }  function handleSpaceKey() {
     // פעולה שונה לכל סוג שאלה
     const currentCard = deck[pos];
     if (!currentCard) return;
@@ -786,10 +1154,18 @@ function escapeHtml(s){
      ניווט / איכות תשובה / Undo
      ========================= */
   function goPrev(){ 
+    saveCardState(); // שמירת מצב נוכחי
     saveClozePartialAnswers(); // שמירת תשובות חלקיות לפני מעבר
     if (pos>0){ pos--; renderCard(); } 
   }
   function goNext(){ 
+    // אם יש איכות נבחרת בשאלה פתוחה - שליחה לפני מעבר
+    const currentCard = deck[pos];
+    if (currentCard && currentCard.type === 'free' && selectedQuality !== null) {
+      applyQuality(selectedQuality);
+    }
+    
+    saveCardState(); // שמירת מצב נוכחי
     saveClozePartialAnswers(); // שמירת תשובות חלקיות לפני מעבר
     if (pos<deck.length-1){ pos++; renderCard(); } else { pos=deck.length; renderCard(); } 
   }
@@ -818,7 +1194,8 @@ const putProgress = (id, row) =>
       undoStack.push({ id:c.id, row: prevRow });
       if (undoStack.length > 100) undoStack.shift();
     }
-    goNext();
+    // הסרת המעבר האוטומטי - עכשיו רק עם כפתור "הבא"
+    // goNext(); - הוסר!
   }
   async function undo(){
     const last = undoStack.pop(); if (!last) return;
@@ -834,16 +1211,47 @@ const putProgress = (id, row) =>
 
   prevBtn.addEventListener('click', goPrev);
   nextBtn.addEventListener('click', goNext);
-  markWrong.addEventListener('click', ()=>applyQuality(2));
-  markPartial.addEventListener('click', ()=>applyQuality(3));
-  markRight.addEventListener('click', ()=>applyQuality(5));
-  undoBtn.addEventListener('click', undo);
-  restartBtn.addEventListener('click', ()=>{
+  markWrong.addEventListener('click', ()=>selectQuality(2, markWrong));
+  markPartial.addEventListener('click', ()=>selectQuality(3, markPartial));
+  markRight.addEventListener('click', ()=>selectQuality(4, markRight));
+
+  // כפתורים בעמוד הסיום
+  restartFromFinish.addEventListener('click', ()=>{
     finish.style.display='none';
     setup.style.display='';
     hud.style.display='none';
     pbar.style.width='0%';
   });
+
+  exitSession.addEventListener('click', ()=>{
+    // חזרה למקור - לקטגוריה/תת-קטגוריה שממנה הגיעו
+    const urlParams = new URLSearchParams(location.search);
+    const cat = urlParams.get('category');
+    const sub = urlParams.get('subcategory') || urlParams.get('sub');
+    
+    if (cat && sub) {
+      window.location.href = `<?= url('flashcards') ?>/${encodeURIComponent(cat)}/${encodeURIComponent(sub)}`;
+    } else if (cat) {
+      window.location.href = `<?= url('flashcards') ?>/${encodeURIComponent(cat)}`;
+    } else {
+      window.location.href = '<?= url('flashcards') ?>';
+    }
+  });
+
+  // כפתור חזרה לכרטיסים מעמוד הסיום
+  backToCards.addEventListener('click', ()=>{
+    finish.style.display='none';
+    stage.style.display='';
+    hud.style.display='';
+  });
+
+  // פונקציה להסתרת תשובה (עבור הכפתור הקטן)
+  function hideAnswer() {
+    aHtml.classList.add('answer-hidden');
+    freeArea.classList.remove('answer-shown'); // מסיר class כדי להציג את flip
+    hideQualityButtons();
+    saveCardState();
+  }
 
   // Event listeners לסוגי שאלות שונים
   
@@ -851,14 +1259,18 @@ const putProgress = (id, row) =>
   flipBtn.addEventListener('click', ()=>{
     if (aHtml.classList.contains('answer-hidden')) {
       aHtml.classList.remove('answer-hidden');
-      flipBtn.textContent = 'הסתר תשובה';
+      freeArea.classList.add('answer-shown'); // מוסיף class כדי להסתיר את flip
       showQualityButtons(); // רק בשאלות פתוחות המשתמש מדרג
     } else {
       aHtml.classList.add('answer-hidden');
-      flipBtn.textContent = 'הצג תשובה';
+      freeArea.classList.remove('answer-shown'); // מסיר class כדי להציג את flip
       hideQualityButtons();
     }
+    saveCardState(); // שמירת מצב אחרי שינוי
   });
+
+  // כפתור קטן להסתרת תשובה
+  hideAnswerBtn.addEventListener('click', hideAnswer);
 
   // שאלה אמריקאית
   mcSubmit.addEventListener('click', ()=>{
@@ -887,17 +1299,22 @@ const putProgress = (id, row) =>
     mcResult.style.display = '';
     
     mcSubmit.style.display = 'none';
+    saveCardState(); // שמירת מצב אחרי שליחה
   });
 
   // נכון/לא נכון
   tfTrue.addEventListener('click', ()=>selectTFAnswer(true));
   tfFalse.addEventListener('click', ()=>selectTFAnswer(false));
-  tfSubmit.addEventListener('click', ()=>submitTFAnswer());
+  tfSubmit.addEventListener('click', ()=>{
+    submitTFAnswer();
+    saveCardState(); // שמירת מצב אחרי שליחה
+  });
 
   // השלמה (Cloze)
   clozeSubmit.addEventListener('click', ()=>{
     const currentCard = deck[pos];
     handleClozeSubmission(currentCard);
+    saveClozeState(); // שמירת מצב אחרי שליחה
   });
   
   // פונקציה לשמירת תשובות חלקיות בזמן הקלדה
@@ -953,7 +1370,12 @@ const putProgress = (id, row) =>
     setupMsg.textContent = 'טוען…';
     const cat = catSel.value || '';
     const sub = subSel.value || '';
-    hudCat.textContent = cat ? ('קטגוריה: ' + cat + (sub?(' / '+sub):'')) : 'כללי';
+    
+    // קבלת השמות הקריאים מהselect options
+    const catName = cat ? catSel.selectedOptions[0]?.textContent || cat : '';
+    const subName = sub ? subSel.selectedOptions[0]?.textContent || sub : '';
+    
+    hudCat.textContent = catName ? ('קטגוריה: ' + catName + (subName?(' > '+subName):'')) : 'כללי';
 
     // שליפת כרטיסים + פרוגרס
     const qs = cat ? (sub ? `?category=${encodeURIComponent(cat)}&subcategory=${encodeURIComponent(sub)}` : `?category=${encodeURIComponent(cat)}`) : '';
@@ -992,9 +1414,8 @@ const putProgress = (id, row) =>
      Init
      ========================= */
   loadCategories().then(()=>{
-    <?php if ($autoStart): ?>
-      startBtn.click();
-    <?php endif; ?>
+    // תמיד להראות את מסך ההגדרות - המשתמש יבחר כמה שאלות רוצה
+    // אפילו אם הגיע עם פרמטרים של קטגוריה/תת-קטגוריה
   });
 
 })();

@@ -24,14 +24,14 @@
         "updatedAt": "2025-09-27T23:36:12+00:00"
     },
     "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card": {
-        "seen": 5,
-        "correct": 2,
+        "seen": 10,
+        "correct": 5,
         "box": 4,
-        "updatedAt": "2025-09-29T07:57:41+00:00",
-        "easiness": 2.42,
+        "updatedAt": "2025-09-30T13:00:31+00:00",
+        "easiness": 2.48,
         "interval": 1,
         "repetitions": 1,
-        "dueAt": "2025-09-30T07:57:41+00:00"
+        "dueAt": "2025-10-01T13:00:31+00:00"
     },
     "flashcards\/cat-20250928-002657\/sub-20250928-113029\/1-1": {
         "seen": 10,
@@ -44,14 +44,14 @@
         "dueAt": "2025-10-14T23:01:54+00:00"
     },
     "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-2": {
-        "seen": 7,
-        "correct": "0",
+        "seen": 26,
+        "correct": 6,
         "box": 4,
-        "updatedAt": "2025-09-29T07:57:34+00:00",
-        "easiness": 1.66,
-        "interval": 11,
-        "repetitions": 3,
-        "dueAt": "2025-10-10T07:57:34+00:00"
+        "updatedAt": "2025-09-30T13:00:35+00:00",
+        "easiness": 1.3,
+        "interval": 7966,
+        "repetitions": 22,
+        "dueAt": "2047-07-23T13:00:35+00:00"
     },
     "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-1": {
         "seen": 4,
@@ -92,5 +92,25 @@
         "interval": 6,
         "repetitions": 2,
         "dueAt": "2025-10-04T23:00:39+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-5": {
+        "seen": 7,
+        "correct": 4,
+        "box": 4,
+        "updatedAt": "2025-09-30T19:27:37+00:00",
+        "easiness": 2.0799999999999996,
+        "interval": 497,
+        "repetitions": 7,
+        "dueAt": "2027-02-09T19:27:37+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-4": {
+        "seen": 1,
+        "correct": 0,
+        "box": 4,
+        "updatedAt": "2025-09-30T19:27:29+00:00",
+        "easiness": 2.36,
+        "interval": 1,
+        "repetitions": 1,
+        "dueAt": "2025-10-01T19:27:29+00:00"
     }
 }

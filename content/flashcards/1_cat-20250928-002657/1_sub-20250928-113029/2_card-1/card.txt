@@ -1,4 +1,4 @@
-Title: עוד שאלת נסיון
+Title: Ran הוא חלבון ממשפחת ה-הGTP-ase
 
 ----
 
@@ -11,6 +11,18 @@ Question: <p>Ran הוא חלבון ממשפחת ה-הGTP-ase</p>
 ----
 
 Answer: {"type":"tf","value":true}
+
+----
+
+Difficulty: 
+
+----
+
+Tags: 
+
+----
+
+Notes: 
 
 ----
 

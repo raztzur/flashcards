@@ -89,14 +89,20 @@
   }
 
   async function Home(){
-    const greet = `<p class="muted">שלום! איזה יופי שחזרת. כל כרטיס מקדם אותך ✅</p>`;
+    const greet = `<p class="muted">שלום! איזה יופי שחזרת. כל כרטיסייה מקדמת אותך ✅</p>`;
     const rows = state.categories.map(cat => { const s=catStats(cat.slug);
       return `<div class="catrow">
         <div class="row"><span class="pill">${s.solved}/${s.total}</span>&nbsp;<strong>${cat.title}</strong></div>
         <div class="meter" data-level="${levelColor(s.score)}" title="${s.score}%"></div>
-        <a class="btn" href="#/add?category=${encodeURIComponent(cat.slug)}">הוסף כרטיסיה</a>
-        <a class="btn" href="#/test?category=${encodeURIComponent(cat.slug)}">מבחן</a>
-        <button class="btn ghost" data-del="${cat.slug}">מחק</button>
+        <a class="icon-btn" href="#/add?category=${encodeURIComponent(cat.slug)}">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+        </a>
+        <a class="icon-btn" href="#/test?category=${encodeURIComponent(cat.slug)}">
+          <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        </a>
+        <button class="icon-btn danger" data-del="${cat.slug}">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
       </div>`; }).join('');
     const addToggle = `<details><summary class="btn">הוסף קטגוריה חדשה</summary>
       <div class="row space" style="margin-top:8px">
@@ -128,7 +134,7 @@
     const cats = state.categories.map(c=>`<option value="${c.slug}">${c.title}</option>`).join('');
     const initCat = state.route.params.category || (state.categories[0]?.slug || '');
     view.innerHTML = `<section class="panel">
-      <h3>הוספת כרטיס</h3>
+      <h3>הוספת כרטיסייה</h3>
       <div class="row"><label>קטגוריה</label><select id="cat">${cats}</select></div>
       <div class="row"><label>סוג השאלה</label>
         <select id="qtype">
@@ -145,6 +151,29 @@
       <p class="muted" id="msg"></p>
     </section>`;
     $('#cat').value = initCat;
+    
+    // הגדרת ברירת מחדל של Heading 1 לשאלות
+    const questionEditor = $('#q');
+    questionEditor.innerHTML = '<h1></h1>';
+    
+    // טיפול בהדבקת טקסט - ניקוי סגנונות חיצוניים
+    function handlePaste(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      document.execCommand('insertText', false, text);
+    }
+    
+    questionEditor.addEventListener('paste', handlePaste);
+    $('#a').addEventListener('paste', handlePaste);
+    
+    // מיקוד על ה-heading בתחילת השאלה
+    questionEditor.focus();
+    const range = document.createRange();
+    range.selectNodeContents(questionEditor.querySelector('h1'));
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
     $('#qtype').addEventListener('change', ()=>{
       const t=$('#qtype').value; const aw=$('#ansWrap');
       if(t==='free'){ aw.innerHTML='<label>תשובה</label>'; $('#a').style.display='block'; }
@@ -201,15 +230,21 @@
     const cards = state.cards.filter(c=>c.category===slug);
     const rows = cards.map(c=>`<div class="catrow"><div>${c.question}</div>
       <div class="meter" data-level="${c.stats?.box>=4?'high':(c.stats?.box>=2?'mid':'low')}"></div>
-      <button class="btn ghost" data-edit="${c.id}">ערוך</button>
-      <button class="btn ghost" data-del="${c.id}">מחק</button>
+      <button class="icon-btn" data-edit="${c.id}">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      </button>
+      <button class="icon-btn danger" data-del="${c.id}">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
     </div>`).join('');
     view.innerHTML = `<section class="panel">
-      <div class="row space"><h3>קטגוריה</h3><a class="btn" href="#/add?category=${encodeURIComponent(slug)}">הוסף כרטיס</a></div>
+      <div class="row space"><h3>קטגוריה</h3><a class="icon-btn" href="#/add?category=${encodeURIComponent(slug)}">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+      </a></div>
       <div class="list">${rows || '<p class="muted">אין כרטיסיות.</p>'}</div>
     </section>`;
     view.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=async ()=>{
-      const id=btn.getAttribute('data-del'); if(!confirm('למחוק כרטיס?')) return;
+      const id=btn.getAttribute('data-del'); if(!confirm('למחוק כרטיסייה?')) return;
       const res=await API.deleteCard(id); if(!res.ok) return alert(res.error||'שגיאה'); await loadAll(); render();
     });
   }

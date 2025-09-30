@@ -74,13 +74,20 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
       font-size: 12px;
       color: #667085;
     }
+  /* Normalize CKEditor Heading sizes and weight inside editor content */
+  .ck.ck-content h1 { font-size: 24px; line-height: 1.2; font-weight: 400; }
+  .ck.ck-content h2 { font-size: 20px; line-height: 1.2; font-weight: 400; }
+  .ck.ck-content h3 { font-size: 18px; line-height: 1.2; font-weight: 400; }
+  /* Tighten paragraph spacing inside editor/preview content */
+  .ck.ck-content p { margin: 0 0 8px; }
+  .ck.ck-content p:last-child { margin-bottom: 0; }
   </style>
-  <title>הוספת כרטיס</title>
+  <title>הוספת כרטיסייה</title>
 </head>
 <body>
   <main class="container">
     <header class="topbar">
-      <h1>הוספת כרטיס</h1>
+      <h1>הוספת כרטיסייה</h1>
       <nav><a class="btn ghost" href="<?= url('flashcards') ?>">← חזרה לבית</a></nav>
     </header>
 
@@ -217,9 +224,20 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
     <!-- פעולות -->
     <section class="actions">
       <button id="save" class="btn">שמירה</button>
+      <button id="preview" class="btn ghost" type="button">👁️ תצוגה מקדימה</button>
       <span id="msg" class="muted" aria-live="polite" style="min-width:180px"></span>
     </section>
   </main>
+
+  <!-- modal לתצוגה מקדימה -->
+  <div id="previewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; padding:20px; box-sizing:border-box;">
+    <div style="background:white; border-radius:12px; max-width:var(--container-w); width:100%; margin:0 auto; max-height:90vh; overflow-y:auto; padding:20px; position:relative;">
+      <button id="closePreview" style="position:absolute; top:15px; left:15px; background:none; border:none; font-size:20px; cursor:pointer;">✕</button>
+      <div id="previewContent">
+        <!-- תוכן הpreview יוכנס כאן -->
+      </div>
+    </div>
+  </div>
 
   <script>
     const $  = s => document.querySelector(s);
@@ -425,12 +443,63 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
             }
           ]
         },
+        heading: {
+          options: [
+            { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+            { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+            { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+            { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' }
+          ]
+        },
         htmlSupport: { allow: [ { name: /.*/, attributes: true, classes: true, styles: true } ] }
       }).then(ed=>{
           ed.editing.view.change( writer => {
             writer.setAttribute('dir','rtl', ed.editing.view.document.getRoot());
             writer.setStyle('text-align','right', ed.editing.view.document.getRoot());
           });
+          
+          // Set default format to Heading 1 for question editor without visual flicker
+          if (elId === 'q') {
+            const wrap = ed.ui?.view?.element;
+            if (wrap) wrap.style.visibility = 'hidden';
+            ed.model.change(writer => {
+              const root = ed.model.document.getRoot();
+              const first = root.getChild(0);
+              // If CKEditor created an initial empty paragraph, rename it to heading1.
+              if (first && first.is?.('element','paragraph') && first.childCount === 0) {
+                writer.rename(first, 'heading1');
+                writer.setSelection(first, 'in');
+              } else if (root.childCount === 0) {
+                // Truly empty root – create heading1 as the first block.
+                const heading = writer.createElement('heading1');
+                writer.insert(heading, root, 0);
+                writer.setSelection(heading, 'in');
+              }
+            });
+            // Reveal the editor after the model update has been applied
+            setTimeout(() => { if (wrap) wrap.style.visibility = ''; }, 0);
+          }
+          
+          // טיפול פשוט יותר בהדבקת טקסט - הסרת עיצוב חיצוני
+          ed.editing.view.document.on('clipboardInput', (evt, data) => {
+            // נשתמש באופציה הפשוטה של CKEditor להמרה לטקסט פשוט
+            if (data.method === 'paste') {
+              const clipboardData = data.dataTransfer;
+              const plainText = clipboardData.getData('text/plain');
+              
+              if (plainText) {
+                // נעצור את ההתנהגות הרגילה
+                evt.stop();
+                
+                // נכניס את הטקסט הפשוט במקום
+                ed.model.change(writer => {
+                  const insertPosition = ed.model.document.selection.getFirstPosition();
+                  writer.insertText(plainText, insertPosition);
+                });
+              }
+            }
+          }, { priority: 'high' });
+          
           return ed;
         });
       }).catch(err => { 
@@ -453,6 +522,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   editorQ = await initEditor('q','כתבי את השאלה…');
   editorA = await initEditor('a','כתבי את התשובה…');
 
+  // מיקוד על עורך השאלות אם זה כרטיסייה חדשה
+  if (editorQ && !initId) {
+    setTimeout(() => {
+      editorQ.editing.view.focus();
+    }, 100);
+  }
+
   // סנכרון Cloze (השלמות)
   attachClozeSync();
 
@@ -462,7 +538,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     await loadSubcats(initCat, initSub || '');
   }
 
-  // מצב עריכה: טוען כרטיס וממלא שדות
+  // מצב עריכה: טוען כרטיסייה וממלא שדות
   if (initId) {
     try {
       const r = await fetch('/card?id=' + encodeURIComponent(initId));
@@ -540,7 +616,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       if (saveBtn) saveBtn.textContent = 'עדכון';
     } catch (e) {
       console.error(e);
-      msgEl.textContent = 'שגיאה בטעינת כרטיס לעריכה';
+      msgEl.textContent = 'שגיאה בטעינת כרטיסייה לעריכה';
     }
   }
 
@@ -909,7 +985,7 @@ async function loadSubcats(cat, preselectSub = '') {
       }
       if (t === 'cloze'){
   const html = (editorQ ? editorQ.getData() : qEl.value || '');
-  const ids = (function(){ const arr=[]; const re=/\\{\\{\\s*(\\d+)\\s*\\}\\}/g; let m; while((m=re.exec(html))!==null){ const n=parseInt(m[1],10); if(!arr.includes(n)) arr.push(n);} return arr; })();
+  const ids = (function(){ const arr=[]; const re=/\{\{\s*(\d+)\s*\}\}/g; let m; while((m=re.exec(html))!==null){ const n=parseInt(m[1],10); if(!arr.includes(n)) arr.push(n);} return arr; })();
   const rows = [];
   ids.forEach(id=>{
     const tr = clozeBlanksTbody.querySelector(`tr[data-id="${id}"]`);
@@ -959,6 +1035,132 @@ async function loadSubcats(cat, preselectSub = '') {
         ? '<?= url('flashcards') ?>/' + encodeURIComponent(category) + '/' + encodeURIComponent(subcategory)
         : '<?= url('flashcards') ?>/' + encodeURIComponent(category);
       window.location.href = backTo;
+    });
+
+    // תצוגה מקדימה
+    const previewBtn = $('#preview');
+    const previewModal = $('#previewModal');
+    const closePreviewBtn = $('#closePreview');
+    const previewContent = $('#previewContent');
+
+    previewBtn.addEventListener('click', () => {
+      const type = typeEl.value;
+      const question = (editorQ ? editorQ.getData() : qEl.value).trim();
+      const answer = buildAnswerByType();
+
+      if (!question) {
+        msgEl.textContent = 'כתוב שאלה קודם';
+        return;
+      }
+
+      function escapeHtml(s){
+        return (s || '').replace(/[&<>"]|'/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+      }
+      function renderClozeQuestion(html){
+        return (html || '').replace(/\{\{\s*(\d+)\s*\}\}/g, (_m, num) => `<span class="cloze-blank" data-id="${num}"><sup>${num}</sup><input type="text" inputmode="text" autocomplete="off" /></span>`);
+      }
+
+      // Build a test-like card structure (static revealed view)
+      let qHtml = (type === 'cloze') ? renderClozeQuestion(question) : question;
+      let body = `
+        <div class="qa-container test-deck">
+          <div class="test-card" tabindex="0" aria-live="polite">
+            <div class="question-section">
+              <div id="prev_qHtml" class="ck-content">${qHtml}</div>
+            </div>
+            <div id="prev_interactionArea" class="interaction-area">
+      `;
+
+      if (type === 'free') {
+        // Show the answer directly, revealed
+        body += `
+              <div class="free-interaction">
+                <div class="answer-display ck-content">${answer || ''}</div>
+              </div>
+        `;
+      } else if (type === 'mc') {
+        // Render options and mark the correct one(s)
+        let options = [];
+        try { options = (JSON.parse(answer||'{}').options) || []; } catch(e) { options = []; }
+        const optsHtml = options.map(o => `<div class="mc-option ${o.correct ? 'correct' : ''}">${escapeHtml(o.text||'')}</div>`).join('');
+        body += `
+              <div class="mc-interaction">
+                <div class="mc-options">${optsHtml}</div>
+                <div class="result-display result-correct">התשובה הנכונה מסומנת בירוק</div>
+              </div>
+        `;
+      } else if (type === 'tf') {
+        // Highlight the correct choice in green
+        let correctVal = true; try { const j = JSON.parse(answer||'{}'); correctVal = !!j.value; } catch(e) {}
+        const tTrueClass = correctVal ? 'tf-option result-correct' : 'tf-option';
+        const tFalseClass = !correctVal ? 'tf-option result-correct' : 'tf-option';
+        body += `
+              <div class="tf-interaction">
+                <div class="tf-buttons">
+                  <button class="btn ${tTrueClass}">נכון</button>
+                  <button class="btn ${tFalseClass}">לא נכון</button>
+                </div>
+                <div class="result-display result-correct">זו התשובה הנכונה</div>
+              </div>
+        `;
+      } else if (type === 'cloze') {
+        // Build full revealed answer by replacing tokens with the first correct answer
+        let correctAnswers = {};
+        try {
+          const ans = JSON.parse(answer||'{}');
+          if (ans && Array.isArray(ans.blanks)) {
+            ans.blanks.forEach(b=>{ if (b && b.id != null) correctAnswers[b.id] = (b.answers||[])[0] || ''; });
+          }
+        } catch(e) {}
+        let full = question;
+        Object.keys(correctAnswers).forEach(id=>{
+          const corr = String(correctAnswers[id]||'');
+          const tag = `<span style="background:#d4edda;color:#155724;padding:2px 6px;border-radius:4px;font-weight:bold;">${escapeHtml(corr)}</span>`;
+          const re = new RegExp(`\\{\\{\\s*${id}\\s*\\}}`, 'g');
+          full = full.replace(re, tag);
+        });
+        body += `
+              <div class="cloze-interaction">
+                <div class="result-display result-correct">
+                  <div style="margin-bottom:8px;"><strong>התשובה המלאה:</strong></div>
+                  <div class="ck-content" style="text-align:right;">${full}</div>
+                </div>
+              </div>
+        `;
+      } else if (type === 'label') {
+        body += `
+              <div><em>תצוגה מקדימה לסוג "תיוג" במצב גלוי אינה נתמכת כאן</em></div>
+        `;
+      }
+
+      body += `
+            </div>
+          </div>
+        </div>
+      `;
+
+      previewContent.innerHTML = body;
+      previewModal.style.display = 'flex';
+      previewModal.style.alignItems = 'center';
+      previewModal.style.justifyContent = 'center';
+    });
+
+    closePreviewBtn.addEventListener('click', () => {
+      previewModal.style.display = 'none';
+    });
+
+    // סגירת המודל בלחיצה על הרקע
+    previewModal.addEventListener('click', (e) => {
+      if (e.target === previewModal) {
+        previewModal.style.display = 'none';
+      }
+    });
+
+    // סגירת המודל בEscape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && previewModal.style.display !== 'none') {
+        previewModal.style.display = 'none';
+      }
     });
   </script>
 </body>

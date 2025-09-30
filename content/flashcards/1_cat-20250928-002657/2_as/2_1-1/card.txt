@@ -1,0 +1,41 @@
+Title: אברהם עשה {{1}} במיטה
+
+----
+
+Type: cloze
+
+----
+
+Question: <h1>אברהם עשה {{1}} במיטה</h1>
+
+----
+
+Answer: {"type":"cloze","blanks":[]}
+
+----
+
+Difficulty: medium
+
+----
+
+Tags: 
+
+----
+
+Notes: 
+
+----
+
+Box: 3
+
+----
+
+Seen: 0
+
+----
+
+Correct: 0
+
+----
+
+Uuid: lhahgjr1vwnpzcsr

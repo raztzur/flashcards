@@ -53,9 +53,6 @@ function body_title_with_aliases(array $b): string {
     $b['title']    ?? null,
     $b['name']     ?? null,
     $b['category'] ?? null,
-    get('title')    ?? null,
-    get('name')     ?? null,
-    get('category') ?? null,
   ];
   foreach ($candidates as $v) if ($v !== null && trim((string)$v) !== '') return trim((string)$v);
   return '';
@@ -178,14 +175,22 @@ return [
         try{
           $prev = kirby()->user(); kirby()->impersonate('kirby');
           $page = \Kirby\Cms\Page::create([
-            'slug'=>$slug,'template'=>'category','parent'=>$root,
+            'slug'=>$slug,
+            'template'=>'category',
+            'parent'=>$root,
             'content'=>[
-              'title'=>$title,'icon'=>$icon,
-              'background'=>$background,'gradient'=>$background,
+              'title'=>$title,
+              'icon'=>$icon,
+              'background'=>$background,
+              'gradient'=>$background,
             ]
           ]);
-          if (method_exists($page,'changeStatus')) $page = $page->changeStatus('listed');
-          elseif (method_exists($page,'publish'))  $page = $page->publish();
+          // פרסום הדף מיד לאחר היצירה
+          if (method_exists($page, 'changeStatus')) {
+            $page = $page->changeStatus('listed');
+          } elseif (method_exists($page, 'publish')) {
+            $page = $page->publish();
+          }
         } catch(\Throwable $e){
           return json_err('Create failed: '.$e->getMessage(),500);
         } finally { kirby()->impersonate($prev ? $prev->id() : null); }
@@ -257,28 +262,37 @@ return [
     [
       'pattern'=>'subcats/add', 'method'=>'POST',
       'action'=>function(){
-        $root = ensure_root_flashcards(); if(!$root) return json_err('Missing /flashcards',404);
-        $b = safe_body();
-        $catSlug = trim((string)($b['category'] ?? '')); if($catSlug==='') return json_err('Missing category slug');
-        $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
+        try {
+          $root = ensure_root_flashcards(); if(!$root) return json_err('Missing /flashcards',404);
+          $b = safe_body();
+          $catSlug = trim((string)($b['category'] ?? '')); if($catSlug==='') return json_err('Missing category slug');
+          $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
 
-        $title = body_title_with_aliases($b); if ($title==='') return json_err('Missing subcategory title');
-        $slug = \Kirby\Toolkit\Str::slug($title) ?: 'sub-'.date('Ymd-His');
-        $i=1; $base=$slug; while($cat->find($slug)) $slug = $base.'-'.$i++;
+          $title = body_title_with_aliases($b); if ($title==='') return json_err('Missing subcategory title');
+          $slug = \Kirby\Toolkit\Str::slug($title) ?: 'sub-'.date('Ymd-His');
+          $i=1; $base=$slug; while($cat->find($slug)) $slug = $base.'-'.$i++;
 
-        try{
           $prev = kirby()->user(); kirby()->impersonate('kirby');
           $page = \Kirby\Cms\Page::create([
-            'slug'=>$slug,'template'=>'subcategory','parent'=>$cat,
+            'slug'=>$slug,
+            'template'=>'subcategory',
+            'parent'=>$cat,
             'content'=>['title'=>$title]
           ]);
-          if (method_exists($page,'changeStatus')) $page = $page->changeStatus('listed');
-          elseif (method_exists($page,'publish'))  $page = $page->publish();
+          // פרסום הדף מיד לאחר היצירה
+          if (method_exists($page, 'changeStatus')) {
+            $page = $page->changeStatus('listed');
+          } elseif (method_exists($page, 'publish')) {
+            $page = $page->publish();
+          }
+          
+          return json_ok(['slug'=>$page->slug(),'title'=>$page->title()->value()]);
         } catch(\Throwable $e){
+          error_log('Subcategory creation error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
           return json_err('Create failed: '.$e->getMessage(),500);
-        } finally { kirby()->impersonate($prev ? $prev->id() : null); }
-
-        return json_ok(['slug'=>$page->slug(),'title'=>$page->title()->value()]);
+        } finally { 
+          if (isset($prev)) kirby()->impersonate($prev ? $prev->id() : null); 
+        }
       }
     ],
     [
@@ -351,13 +365,20 @@ return [
         $data = $cards->map(function($p){
           $parent = $p->parent();            // subcategory
           $cat    = $parent?->parent();      // category
+          
+          // עבור שאלות Cloze אנחנו צריכים את התוכן הגולמי, לא מעובד
+          $type = $p->type()->value();
+          $question = ($type === 'cloze') 
+            ? $p->question()->value()  // גולמי
+            : $p->question()->kirbytext()->value();  // מעובד
+            
           return [
             'id'         => $p->id(),
             'slug'       => $p->slug(),
             'category'   => $cat?->slug(),
             'subcategory'=> $parent?->slug(),
-            'type'       => $p->type()->value(),
-            'question'   => $p->question()->kirbytext()->value(),
+            'type'       => $type,
+            'question'   => $question,
             'answer'     => $p->answer()->value(),
             'stats'      => [
               'box'    => (int)$p->box()->or(3)->value(),
@@ -415,7 +436,7 @@ return [
         $slug=$slugBase; $i=1; $base=$slug; while($sub->find($slug)) $slug = $base.'-'.$i++;
 
         $content = [
-          'title'    => $q ? \Kirby\Toolkit\Str::excerpt($q,48) : 'Card',
+          'title'    => $q ? \Kirby\Toolkit\Str::excerpt($q,48) : 'Flashcard',
           'type'     => $type,
           'question' => $q,
           'answer'   => $a,
@@ -434,6 +455,21 @@ return [
       }
     ],
     [
+      'pattern'=>'api/card/(:all)', 'method'=>'GET',
+      'action'=>function($id){
+        $p = page($id); 
+        if(!$p) return new Response('{"error":"Flashcard not found"}', 'application/json', 404);
+        
+        return new Response(json_encode([
+          'id' => $p->id(),
+          'type' => $p->type()->value() ?: 'free',
+          'question' => $p->question()->value(),
+          'answer' => $p->answer()->value(),
+          'title' => $p->title()->value()
+        ]), 'application/json');
+      }
+    ],
+    [
       'pattern'=>'cards/update', 'method'=>'POST',
       'action'=>function(){
         $b = safe_body();
@@ -443,10 +479,13 @@ return [
         $type = $b['type'] ?? $p->type()->value();
         $q    = isset($b['question']) ? trim((string)$b['question']) : $p->question()->value();
         $a    = isset($b['answer'])   ? (string)$b['answer'] : $p->answer()->value();
+        
+        // עדכון הכותרת לפי השאלה החדשה
+        $title = $q ? \Kirby\Toolkit\Str::excerpt($q, 48) : 'Flashcard';
 
         try{
           $prev = kirby()->user(); kirby()->impersonate('kirby');
-          $p->update(['type'=>$type,'question'=>$q,'answer'=>$a]);
+          $p->update(['type'=>$type,'question'=>$q,'answer'=>$a,'title'=>$title]);
         } catch(\Throwable $e){ return json_err('Update failed: '.$e->getMessage(),500);
         } finally { kirby()->impersonate($prev ? $prev->id() : null); }
 

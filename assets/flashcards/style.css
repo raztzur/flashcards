@@ -10,6 +10,16 @@
   font-style: normal;
   font-display: swap;
 }
+
+@font-face {
+  font-family: 'NarkissTam';
+  src: url('/assets/fonts/NarkissTam-Bold.otf') format('opentype');
+  font-weight: 700; /* Bold */
+  font-style: normal;
+  font-display: swap;
+}
+
+
 html, body {
   font-family: 'NarkissTam', system-ui, sans-serif;
   font-weight: 600;
@@ -33,7 +43,7 @@ html, body {
 
   /* גדלים */
   --container-w:1200px;
-  --test-card-h: 400px; /* גובה כרטיס המבחן (שנה כאן לפי הצורך) */
+  --test-card-h: 400px; /* גובה כרטיסייה במבחן (שנה כאן לפי הצורך) */
   --qa-box-h: 400px; /* גובה ברירת מחדל – אפשר לשנות במקום אחד */
   
   /* גובהי שאלות ותשובות במבחן */
@@ -55,7 +65,6 @@ html,body{
   margin:0; padding:0;
   background:var(--bg-page); color:var(--ink);
 }
-img,svg{ display:block; }
 
 /* ====== Layout כללי ====== */
 .container{ max-width:var(--container-w); padding:24px 20px; margin:0 auto; }
@@ -81,6 +90,21 @@ main.container{ min-height:100dvh; }
 .btn.ghost{ background:#f7f8fc; border-color:transparent; box-shadow:inset 0 0 0 1px var(--stroke); }
 .btn.danger{ color:var(--danger); border-color:var(--danger); box-shadow:none; background:#fff; }
 .btn.small{ padding:6px 10px; font-size:13px; }
+
+/* ====== כפתורי אייקון מקצועיים ====== */
+.icon-btn{
+  width:28px; height:28px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center;
+  background:transparent; border:1px solid var(--stroke); color:inherit; cursor:pointer;
+  transition:background .12s ease;
+}
+.icon-btn:hover{ background:#fafafd; }
+.icon-btn:disabled{ opacity:0.7; cursor:not-allowed; }
+.icon-btn.processing{ opacity:0.7; cursor:not-allowed; pointer-events:none; }
+.icon-btn svg{ width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.6; pointer-events:none; }
+.icon-btn.danger{ border-color:#f2c6c6 !important; color:#a40000 !important; }
+.icon-btn.danger:hover{ background:#fff2f2; }
+.icon-btn.danger:disabled{ border-color:#f2c6c6 !important; color:#a40000 !important; opacity:0.7; cursor:not-allowed; }
+.icon-btn.danger.processing{ border-color:#f2c6c6 !important; color:#a40000 !important; opacity:0.7; cursor:not-allowed; pointer-events:none; }
 
 /* ====== רשת קטגוריות ====== */
 .grid{ display:grid; gap:20px; grid-template-columns:repeat(3,1fr); }
@@ -221,7 +245,15 @@ html[dir="rtl"] .grid{ direction:rtl; }
    ========================================================= */
 .test-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
 .test-controls { display:flex; gap:8px; flex-wrap:wrap; }
-.test-info { color: var(--ink-muted); font-size:13px; display:flex; gap:12px; flex-wrap:wrap; }
+.test-info { 
+  color: var(--ink-muted); 
+  font-size:13px; 
+  display:flex; 
+  gap:12px; 
+  flex-wrap:wrap; 
+  justify-content: space-between; 
+  margin-bottom: 12px; /* Added gap between test-info and progress bar */
+}
 .test-deck {
   border:1px solid var(--stroke); border-radius:16px; padding:16px;
   background: var(--bg-card); box-shadow: var(--shadow);
@@ -238,6 +270,7 @@ html[dir="rtl"] .grid{ direction:rtl; }
   text-align:inherit;
   cursor:default;
   user-select:text; /* אפשור בחירת טקסט */
+  min-height: 400px; /* גובה מינימלי קבוע לשמירת פרופורציות */
 }
 
 .test-card .face {
@@ -245,12 +278,146 @@ html[dir="rtl"] .grid{ direction:rtl; }
   width: 100%;
   overflow: auto;              /* גלילה פנימית כשצריך */
   display: flex;
-  align-items: center;
+  align-items: flex-start;     /* שינוי מ-center ל-flex-start */
   justify-content: center;
+  line-height: 1.6;
+  padding: 20px 0;            /* הוספת padding למעלה ולמטה */
 }
+
 .test-card .face > * {
-  max-width: 70ch;
   width: 100%;
+}
+
+/* כללים ספציפיים לתוכן בתוך .face */
+.test-card .face .answer-display,
+.test-card .face #aHtml {
+  width: 100%;
+  text-align: right;
+}
+
+/* אל תכפה display:block על אלמנטים – נאפשר לתוכן מהעורך לשמור על התצוגה המקורית */
+
+/* תמונות בתוכן המבחן */
+#qHtml img, #aHtml img, .answer-display img, .question-section img {
+  /* הצגת תמונות כמו שצריך */
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 4px !important;
+  /* משפרות את הצגת התמונה */
+  object-fit: contain !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  /* שמירה על הסגנונות המקוריים מהעורך */
+}
+
+/* תמיכה ב-figure elements מ-CKEditor */
+#qHtml figure, #aHtml figure, .answer-display figure, .question-section figure {
+  /* שמירה על הסגנונות המקוריים של figure */
+  max-width: 100% !important;
+}
+
+/* כיתוב תמונה (caption) מתחת לתמונות כמו בעורך */
+#qHtml figcaption, #aHtml figcaption, .answer-display figcaption, .question-section figcaption {
+  font-size: 0.9em;
+  color: var(--ink-muted);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* תמונות בצד ימין (image-style-side) - כבוד לגדלים של המשתמש */
+#qHtml figure.image-style-side, #aHtml figure.image-style-side, 
+.answer-display figure.image-style-side, .question-section figure.image-style-side {
+  float: right !important;
+  margin: 0 0 16px 16px !important;
+  clear: both !important;
+  /* אל תעקוף את הגדלים - תן למשתמש לקבוע */
+}
+
+/* וודא שהתמונות בתוך figure.image-style-side מותאמות נכון (כבוד לרוחב מהעורך) */
+#qHtml figure.image-style-side img, #aHtml figure.image-style-side img,
+.answer-display figure.image-style-side img, .question-section figure.image-style-side img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* תמונות במרכז (image-style-block) */
+#qHtml figure.image-style-block, #aHtml figure.image-style-block,
+.answer-display figure.image-style-block, .question-section figure.image-style-block {
+  display: block !important;
+  margin: 16px auto !important;
+  text-align: center !important;
+}
+
+/* תמונות inline */
+#qHtml figure.image-style-inline, #aHtml figure.image-style-inline,
+.answer-display figure.image-style-inline, .question-section figure.image-style-inline {
+  display: inline-block !important;
+  margin: 0 8px !important;
+}
+
+/* clearfix לאחרי אלמנטים עם תמונות מרחפות */
+#qHtml:after, #aHtml:after, .answer-display:after, .question-section:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.test-card .face .answer-display ul,
+.test-card .face .answer-display ol,
+.test-card .face #aHtml ul,
+.test-card .face #aHtml ol {
+  display: block !important;
+  list-style-position: inside;
+}
+
+.test-card .face .answer-display li,
+.test-card .face #aHtml li {
+  display: list-item !important;
+  margin-bottom: 4px;
+}
+
+.test-card .face .answer-display span,
+.test-card .face #aHtml span {
+  display: inline !important;
+}
+
+/* עיצוב נכון לפסקאות בשאלות */
+.test-card .face p {
+  margin: 0 0 12px 0;
+}
+
+.test-card .face p:last-child {
+  margin-bottom: 0;
+}
+
+.test-card .face br {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.test-card .face ul, .test-card .face ol {
+  margin: 8px 0;
+  padding-right: 20px;
+  text-align: right;
+  display: block;
+}
+
+.test-card .face li {
+  margin-bottom: 4px;
+  display: list-item;
+  text-align: right;
+}
+
+.test-card .face h1, .test-card .face h2, .test-card .face h3, 
+.test-card .face h4, .test-card .face h5, .test-card .face h6 {
+  margin: 16px 0 8px 0;
+}
+
+.test-card .face blockquote {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-right: 4px solid var(--blue-200);
+  background: var(--blue-50);
 }
 
 .test-card .answer { display:none; }
@@ -262,10 +429,114 @@ html[dir="rtl"] .grid{ direction:rtl; }
 .test-actions .btn { min-width:90px; }
 .test-nav { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
 
+/* ===== עיצוב לכרטיסיות Flipcard (מערכת ישנה) ===== */
+.flipcard {
+  min-height: 400px;
+  background: var(--bg-card);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: right !important; /* יישור לימין */
+  direction: rtl !important; /* כיוון RTL */
+  cursor: pointer;
+  user-select: text;
+  line-height: 1.6;
+  transition: transform 0.2s ease;
+}
+
+.flipcard:hover {
+  transform: translateY(-2px);
+}
+
+.flipcard > div {
+  width: 100%;
+  text-align: right !important; /* יישור התוכן לימין */
+  direction: rtl !important;
+}
+
+/* תמונות בתוך flipcard */
+.flipcard img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 4px !important;
+  object-fit: contain !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* תמונות בצד ימין בתוך flipcard - כבוד לגדלים של המשתמש */
+.flipcard figure.image-style-side {
+  float: right !important;
+  margin: 0 0 16px 16px !important;
+  clear: both !important;
+  /* אל תעקוף את הגדלים - תן למשתמש לקבוע */
+}
+
+/* וודא שהתמונות בתוך flipcard figure.image-style-side מותאמות נכון (לא לעקוף inline width) */
+.flipcard figure.image-style-side img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* תמונות במרכז בתוך flipcard */
+.flipcard figure.image-style-block {
+  display: block !important;
+  margin: 16px auto !important;
+  text-align: center !important;
+}
+
+/* clearfix לאחרי flipcard */
+.flipcard:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 /* ===== Separated Q&A Layout ===== */
 .qa-container {
-  min-height: 320px;
+  height: 620px; /* גובה קבוע */
   margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* הכרטיס מתפרס על כל הגובה */
+.qa-container .test-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* אזור השאלה - 30% מהגובה */
+.qa-container .question-section {
+  height: 20%; /* 30% מ-620px = 186px */
+  flex-shrink: 0;
+  overflow: auto;
+  padding: 16px;
+  border-bottom: 1px solid var(--stroke);
+  /* מרכז את תוכן השאלה מבלי לשנות את יישור הטקסט */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* אזור התשובה - 70% מהגובה */
+.qa-container .interaction-area {
+  height: 70%; /* 70% מ-620px = 434px */
+  flex-shrink: 0;
+  overflow: auto;
+  padding: 16px;
+  /* מרכז את תיבות התשובה מבלי לשנות את יישור הטקסט */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
 .controls-container {
@@ -282,7 +553,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
   gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 16px;
 }
 
 .controls-container .test-nav {
@@ -294,42 +564,295 @@ html[dir="rtl"] .grid{ direction:rtl; }
 
 /* ===== Interactive Question Areas ===== */
 .question-section {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--stroke);
-  margin-bottom: 16px;
   user-select: text; /* אפשור בחירת טקסט בשאלות */
+  line-height: 1.6;
 }
 
-.interaction-area {
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
+/* עיצוב נכון לפסקאות בשאלות */
+.question-section p {
+  margin: 0 0 12px 0;
+  text-align: right; /* ברירת מחדל ב־RTL; inline styles מהעורך יעקפו */
+}
+
+.question-section p:last-child {
+  margin-bottom: 0;
+}
+
+/* כיווניות RTL גלובלית לתוכן, מבלי לעקוף יישור שהמשתמש הגדיר בעורך */
+#qHtml, #aHtml, .answer-display, .question-section {
+  direction: rtl;
+}
+
+.question-section br {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.question-section ul, .question-section ol {
+  margin: 8px 0;
+  padding-right: 20px;
+  text-align: right;
+}
+
+.question-section li {
+  margin-bottom: 4px;
+}
+
+.question-section h1, .question-section h2, .question-section h3, 
+.question-section h4, .question-section h5, .question-section h6 {
+  margin: 16px 0 8px 0;
+}
+
+.question-section blockquote {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-right: 4px solid var(--blue-200);
+  background: var(--blue-50);
+}
+
+/* הסרתי את ההגדרה הישנה של interaction-area כיוון שיש חדשה יותר מוגדרת */
+
+/* תיבות תשובה מרוכזות בתוך qa-container */
+.qa-container .interaction-area .answer-display,
+.qa-container .interaction-area .mc-options,
+.qa-container .interaction-area .tf-buttons,
+.qa-container .interaction-area .result-display {
+  margin: 0 auto; /* מרכז את התיבות מבלי להגביל רוחב */
+}
+
+/* תוכן השאלה מרוכז בתוך qa-container */
+.qa-container .question-section #qHtml,
+.qa-container .question-section > * {
+  margin: 0 auto; /* מרכז את תוכן השאלה מבלי להגביל רוחב */
+}
+
+/* שאלות פתוחות - כפתור הצג תשובה במקום התשובה */
+.qa-container .free-interaction {
   gap: 12px;
+  /* יירש את המיקום המרכזי מה-parent (.interaction-area) */
 }
 
-/* שאלה פתוחה */
-.free-interaction {
+.qa-container .free-interaction #flip {
+  margin: 0 auto;
+}
+
+/* כשהתשובה מוצגת (לא מוסתרת), הכפתור flip נעלם */
+.qa-container .free-interaction .answer-display:not(.answer-hidden) ~ #flip {
+  display: none;
+}
+
+/* התשובה מוסתרת כברירת מחדל */
+.qa-container .free-interaction .answer-display.answer-hidden {
+  display: none;
+}
+
+/* כאשר התשובה לא מוסתרת - התשובה מופיעה */
+.qa-container .free-interaction .answer-display:not(.answer-hidden) {
+  display: block;
+}
+
+/* כפתור flip נעלם כשהתשובה מוצגת */
+.qa-container .free-interaction .answer-display:not(.answer-hidden) ~ #flip {
+  display: none !important;
+}
+
+/* אם התשובה לא מוסתרת, הכפתור flip נעלם */
+.qa-container .free-interaction:has(.answer-display:not(.answer-hidden)) #flip {
+  display: none !important;
+}
+
+/* כשהתשובה מוצגת, הכפתור flip נעלם רק באותו אלמנט */
+.qa-container .free-interaction.answer-shown #flip {
+  display: none;
+}
+
+/* עמוד סיום ממורכז בגובה */
+.qa-container.test-deck.finish-container {
+  height: 620px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
+.qa-container.test-deck.finish-container .test-card-stats {
+  width: 100%;
+}
+
+/* אינטראקציות ספציפיות ממורכזות בגובה */
+.qa-container .mc-interaction,
+.qa-container .tf-interaction,
+.qa-container .cloze-interaction {
+  gap: 20px;
+  /* יירש את המיקום המרכזי מה-parent */
+}
+
+/* הסרתי הגדרה כפולה של free-interaction */
+
+/* שאלה פתוחה */
+
 .answer-display {
-  border: 1px solid var(--stroke);
+  position: relative; /* עבור מיקום הכפתור הקטן */
   border-radius: 12px;
   padding: 16px;
   background: #fff;
   margin-top: 12px;
   user-select: text; /* אפשור בחירת טקסט בתשובות */
+  line-height: 1.6;
 }
 
-.answer-hidden {
+/* כפתור קטן להסתרת תשובה בפינה */
+.qa-container .answer-display .hide-answer-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  color: #666;
+}
+
+.qa-container .answer-display .hide-answer-btn:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.2);
+  transform: scale(1.1);
+}
+
+/* הכפתור הקטן נעלם כשהתשובה מוסתרת */
+.qa-container .answer-display.answer-hidden .hide-answer-btn {
   display: none;
 }
 
+.answer-display > * {
+  max-width: 100%;
+}
+
+/* עיצוב נכון לפסקאות בתשובות */
+.answer-display p {
+  margin: 0 0 12px 0;
+}
+
+.answer-display p:last-child {
+  margin-bottom: 0;
+}
+
+.answer-display br {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.answer-display ul, .answer-display ol {
+  margin: 8px 0;
+  padding-right: 20px;
+  display: block;
+}
+
+.answer-display li {
+  margin-bottom: 4px;
+  display: list-item;
+  text-align: right;
+}
+
+.answer-display h1, .answer-display h2, .answer-display h3, 
+.answer-display h4, .answer-display h5, .answer-display h6 {
+  margin: 16px 0 8px 0;
+}
+
+.answer-display blockquote {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-right: 4px solid var(--blue-200);
+  background: var(--blue-50);
+}
+
+/* עיצוב ספציפי ל-aHtml */
+#aHtml {
+  line-height: 1.6;
+  width: 100%;
+}
+
+#aHtml > * {
+  max-width: 100%;
+}
+
+#aHtml p {
+  margin: 0 0 12px 0;
+  display: block;
+}
+
+#aHtml p:last-child {
+  margin-bottom: 0;
+}
+
+#aHtml ul, #aHtml ol {
+  margin: 8px 0;
+  padding-right: 20px;
+  display: block;
+}
+
+#aHtml li {
+  margin-bottom: 4px;
+  display: list-item;
+  text-align: right;
+}
+
+#aHtml h1, #aHtml h2, #aHtml h3, 
+#aHtml h4, #aHtml h5, #aHtml h6 {
+  margin: 16px 0 8px 0;
+  display: block;
+}
+
+#aHtml blockquote {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-right: 4px solid var(--blue-200);
+  background: var(--blue-50);
+  display: block;
+}
+
+#aHtml span {
+  display: inline;
+}
+
+#aHtml br {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.answer-hidden { visibility:hidden; pointer-events:none; }
+
 /* שאלה אמריקאית */
+.mc-interaction {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+/* ריכוז כפתורי "בדוק תשובות" */
+.mc-interaction #mcSubmit,
+.tf-interaction #tfSubmit,
+.cloze-interaction #clozeSubmit {
+  display: block;
+  margin: 0 auto;
+  text-align: center;
+}
+
 .mc-options {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  text-align: center;
+  width: 100%;
 }
 
 .mc-option {
@@ -339,7 +862,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
   background: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: right;
 }
 
 .mc-option:hover {
@@ -366,6 +888,13 @@ html[dir="rtl"] .grid{ direction:rtl; }
 }
 
 /* נכון/לא נכון */
+.tf-interaction {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
 .tf-buttons {
   display: flex;
   gap: 12px;
@@ -410,6 +939,10 @@ html[dir="rtl"] .grid{ direction:rtl; }
 
 /* השלמה (Cloze) */
 .cloze-interaction {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
   text-align: center;
 }
 
@@ -452,7 +985,6 @@ html[dir="rtl"] .grid{ direction:rtl; }
 
 .question-box > *,
 .answer-box > *{
-  max-width: 70ch;
   width: 100%;
 }
 
@@ -488,13 +1020,46 @@ html[dir="rtl"] .grid{ direction:rtl; }
   width: 100%;
   height: 100%;
   overflow: auto;
-  display: flex;              /* עוטף גלילה פנימית */
-  align-items: center;        /* מרכז אנכית בתוך הקופסה */
-  justify-content: center;    /* מרכז אופקית */
+  line-height: 1.6;
+}
+
+/* עיצוב נכון לפסקאות בתשובות */
+#aHtml p {
+  margin: 0 0 12px 0;
+}
+
+#aHtml p:last-child {
+  margin-bottom: 0;
+}
+
+#aHtml br {
+  display: block;
+  margin-bottom: 8px;
+}
+
+#aHtml ul, #aHtml ol {
+  margin: 8px 0;
+  padding-right: 20px;
+  text-align: right;
+}
+
+#aHtml li {
+  margin-bottom: 4px;
+}
+
+#aHtml h1, #aHtml h2, #aHtml h3, 
+#aHtml h4, #aHtml h5, #aHtml h6 {
+  margin: 16px 0 8px 0;
+}
+
+#aHtml blockquote {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-right: 4px solid var(--blue-200);
+  background: var(--blue-50);
 }
 
 #aHtml .answer-inner{
-  max-width: 70ch;            /* קריאות */
   width: auto;                /* לא למתוח לרוחב מלא, כדי לאפשר מרכוז אמיתי */
   margin: auto;               /* ממקם במרכז גם כשהרוחב משתנה */
 }
@@ -512,7 +1077,13 @@ html[dir="rtl"] .grid{ direction:rtl; }
 }
 
 /* מקשים / איכות תשובה */
-.quality-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.quality-row { 
+  display:flex; 
+  gap:8px; 
+  justify-content:center; 
+  flex-wrap:wrap; 
+  transition: opacity 0.3s ease;
+}
 .quality-row .btn { border-radius:999px; }
 .quality-bad   { border-color:#c62828; color:#c62828; }
 .quality-mid   { border-color:#f57c00; color:#f57c00; }
@@ -522,7 +1093,7 @@ html[dir="rtl"] .grid{ direction:rtl; }
 .test-size { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 .test-size .chip {
   border:1px solid var(--stroke); border-radius:999px; padding:4px 10px; cursor:pointer; background:#fff;
-  font-size:13px;
+  font-size:13px; color:var(--ink);
 }
 .test-size .chip[aria-pressed="true"] { background:#000; color:#fff; }
 
@@ -735,7 +1306,12 @@ label { font-size:13px; color: var(--ink-muted); display:block; margin-bottom:6p
 .ck-content ul, .ck-content ol { padding-inline-start: 1.2em; margin: .5em 0; }
 .ck-content table { width: 100%; border-collapse: collapse; margin: .6em 0; }
 .ck-content table td, .ck-content table th { border: 1px solid var(--stroke); padding: 6px 8px; }
-.ck-content img { max-width: 100%; height: auto; display: block; margin: 8px auto; border-radius: 8px; }
+/* תמונות בעורך CKEditor - רק לא בשאלות ותשובות */
+.ck-content img:not(.test-card *):not(.answer-display *):not(#aHtml *):not(.question-section *) { 
+  max-width: 100%; height: auto; display: block; margin: 8px auto; border-radius: 8px; 
+}
+
+/* אין כללים מיוחדים לתמונות ו-figures בשאלות ותשובות */
 
 /* ===== Cloze blanks (numbered underline) ===== */
 .cloze-blank{

@@ -1,0 +1,26 @@
+# Kirby / Apache rewrite rules
+# This file ensures Apache routes all non-file requests to index.php and blocks sensitive paths.
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Block direct access to Kirby core, site config, and content
+  RewriteRule ^kirby/ - [F,L]
+  RewriteRule ^site/ - [F,L]
+  RewriteRule ^content/ - [F,L]
+
+  # Block access to certain files
+  RewriteRule (\.env|composer\.(json|lock)|yarn\.lock|package(-lock)?\.json)$ - [F,L]
+
+  # Route everything else to the front controller if it isn't a real file or dir
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+# Deny access to hidden files (e.g., .git)
+<FilesMatch "(^\.|\.log$|\.lock$)">
+  Require all denied
+</FilesMatch>

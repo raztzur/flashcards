@@ -26,9 +26,8 @@ columns:
             label: Description
             
       stats:
-        type: stats
-        reports:
-          - label: Subcategories
-            query: page.children
-          - label: Total Cards
-            query: page.index.filterBy('template', 'card')
+        type: info
+        text: |
+          סטטיסטיקות קטגוריה:
+          - תת-קטגוריות: {{ page.children.count }}
+          - סה"כ כרטיסיות: {{ page.index.filterBy('template', 'card').count }}

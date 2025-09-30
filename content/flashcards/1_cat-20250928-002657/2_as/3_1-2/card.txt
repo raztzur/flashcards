@@ -1,0 +1,41 @@
+Title: זו {{1}} שלי
+
+----
+
+Type: cloze
+
+----
+
+Question: <h1>זו {{1}} שלי</h1>
+
+----
+
+Answer: {"type":"cloze","blanks":[{"id":1,"answers":["השאלה"]}]}
+
+----
+
+Difficulty: medium
+
+----
+
+Tags: 
+
+----
+
+Notes: 
+
+----
+
+Box: 3
+
+----
+
+Seen: 0
+
+----
+
+Correct: 0
+
+----
+
+Uuid: xl5yf9mwmskuswe9

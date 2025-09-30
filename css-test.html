@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בדיקת CSS</title>
+    <link rel="stylesheet" href="/assets/flashcards/style.css">
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        #qHtml { border: 1px solid #ccc; padding: 20px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>בדיקת CSS לתמונות</h1>
+    
+    <h2>תוכן בתוך #qHtml</h2>
+    <div id="qHtml">
+        <p>זהו טקסט לפני התמונה.</p>
+        <figure class="image-style-side">
+            <img src="https://via.placeholder.com/300x200/0066cc/white?text=Test+Image" alt="תמונה לבדיקה" style="width: 100%; height: auto;">
+        </figure>
+        <p>זהו טקסט שאמור לזרום סביב התמונה. התמונה אמורה להיות בצד ימין והטקסט הזה אמור לזרום סביבה. אם ה-CSS עובד נכון, התמונה תהיה בצד ימין עם margin מתאים.</p>
+        <p>עוד טקסט כדי לבדוק את הזרימה. זה אמור להמשיך לזרום סביב התמונה עד שהיא תסתיים.</p>
+    </div>
+
+    <h2>HTML שנטען דינמית</h2>
+    <div id="dynamicTest">
+        <!-- כאן נטען תוכן דינמית -->
+    </div>
+
+    <script>
+        // סימולציה של טעינה דינמית כמו באתר
+        const dynamicHtml = `
+            <p>זהו תוכן שנטען דינמית.</p>
+            <figure class="image-style-side">
+                <img src="https://via.placeholder.com/300x200/cc6600/white?text=Dynamic+Image" alt="תמונה דינמית" style="width: 100%; height: auto;">
+            </figure>
+            <p>טקסט שאמור לזרום סביב התמונה הדינמית. בדיקה אם ה-CSS פועל גם על תוכן שנטען ב-JavaScript.</p>
+        `;
+        
+        document.getElementById('dynamicTest').innerHTML = dynamicHtml;
+    </script>
+</body>
+</html>
