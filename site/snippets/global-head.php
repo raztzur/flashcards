@@ -6,6 +6,7 @@ $ver = function (string $path): string {
 };
 ?>
 <link rel="stylesheet" href="<?= $ver('assets/flashcards/style.css') ?>">
+<script src="<?= $ver('assets/flashcards/custom-select.js') ?>"></script>
 <link rel="manifest" href="<?= url('assets/pwa/manifest.json') ?>">
 <meta name="theme-color" content="#ffffff">
 <?= snippet('icons-sprite') ?>

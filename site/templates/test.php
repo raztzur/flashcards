@@ -34,7 +34,15 @@ $initialSub = get('subcategory') ?? get('sub');
     }
 
     /* תוכן התשובה מגלול בתוך הקופסה הקבועה */
-    #aHtml{ max-height:100%; overflow:auto; }
+    #aHtml{ max-height:100%; overflow:auto; position:relative; }
+    #aHtml img{ max-width:100%; height:auto; display:block; margin:8px auto; border-radius:8px; }
+    /* רמז שיש עוד תוכן עם fade בתחתית */
+    #aHtml:after{ content:""; position:absolute; left:0; right:0; bottom:0; height:32px; pointer-events:none;
+      background:linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1)); }
+    @media (max-width:600px){
+      :root{ --answer-h: 280px; }
+      #aHtml img{ max-height:220px; object-fit:contain; }
+    }
 
     /* סגנונות לכפתורי איכות מסומנים */
     .quality-bad.selected { 
@@ -58,6 +66,8 @@ $initialSub = get('subcategory') ?? get('sub');
 
     /* מוסתר אבל שומר על הגובה של הקופסה */
     .answer-hidden{ visibility:hidden; pointer-events:none; }
+    /* כפתור סגירת תשובה – ממוקם בפנים */
+    .hide-answer-btn{ position:sticky; top:0; left:0; float:left; margin:0 0 6px 6px; }
   </style>
   <script>
     // Early, robust helpers that don't rely on the big script
@@ -131,9 +141,22 @@ $initialSub = get('subcategory') ?? get('sub');
 
   <header class="topbar test-header">
     <h1>מבחן</h1>
+    <?php 
+      // אם הגענו מתוך תת-קטגוריה, נחזור אליה
+      if ($initialSub && $initialCat) {
+        $backUrl = url('flashcards/' . $initialCat . '/' . $initialSub);
+      } else {
+        $backUrl = url('flashcards');
+      }
+    ?>
     <div class="test-controls">
-      <a href="<?= url('flashcards') ?>" class="btn">← חזרה</a>
+      <a href="<?= $backUrl ?>" class="btn">← חזרה</a>
     </div>
+    <a class="backbtn" href="<?= $backUrl ?>" aria-label="חזרה">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </a>
   </header>
 
   <!-- שלב ההגדרות -->
@@ -213,7 +236,7 @@ $initialSub = get('subcategory') ?? get('sub');
     <div class="test-info">
       <span id="hudCat">כללי</span>
       <span>זמן: <strong id="timer">00:00</strong></span>
-      <span>התקדמות: <strong id="counter">0/0</strong></span>
+      <span><strong id="counter">0/0</strong></span>
     </div>
     <div style="height:8px; background:#f0f2f7; border:1px solid var(--stroke); border-radius:999px; overflow:hidden;">
       <div id="pbar" style="height:100%; width:0%; background:#111;"></div>
@@ -1744,7 +1767,7 @@ const putProgress = (id, row) =>
     const catName = cat ? catSel.selectedOptions[0]?.textContent || cat : '';
     const subName = sub ? subSel.selectedOptions[0]?.textContent || sub : '';
     
-    hudCat.textContent = catName ? ('קטגוריה: ' + catName + (subName?(' > '+subName):'')) : 'כללי';
+    hudCat.textContent = catName ? ( catName + (subName?(' > '+subName):'')) : 'כללי';
 
     // שליפת כרטיסים + פרוגרס
     const qs = cat ? (sub ? `?category=${encodeURIComponent(cat)}&subcategory=${encodeURIComponent(sub)}` : `?category=${encodeURIComponent(cat)}`) : '';

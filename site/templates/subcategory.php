@@ -99,14 +99,32 @@ $avgEf = $efCount ? ($efSum / $efCount) : null;
   <main class="container">
     <header class="topbar">
       <h1><?= html($sub?->title()) ?></h1>
+      <button class="hamburger" type="button" aria-label="תפריט" data-menu-btn>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
       <nav class="nav">
-        <a class="btn ghost" href="<?= url('flashcards') ?>">← חזרה לעמוד הראשי</a>
+        <a class="btn ghost" href="<?= url('flashcards') ?>">→ לעמוד הראשי</a>
         <a class="btn" href="<?= url('flashcards/add') . '?category=' . urlencode($catSlug) . '&subcategory=' . urlencode($subSlug) ?>">הוסף כרטיסייה</a>
-        <a class="btn" href="<?= url('flashcards/test') . '?category=' . urlencode($catSlug) . '&subcategory=' . urlencode($subSlug) . '&auto=1' ?>">מבחן בתת־קטגוריה</a>
+        <a class="btn" href="<?= url('flashcards/test') . '?category=' . urlencode($catSlug) . '&subcategory=' . urlencode($subSlug) ?>">מבחן בתת־קטגוריה</a>
       </nav>
     </header>
+    <script>
+      // Hamburger toggle for mobile (subcategory)
+      (function(){
+        const topbar = document.currentScript.previousElementSibling; // header.topbar
+        const btn = topbar.querySelector('[data-menu-btn]');
+        if (!btn) return;
+        btn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          topbar.classList.toggle('menu-open');
+        });
+        document.addEventListener('click', (e)=>{
+          if (!topbar.contains(e.target)) topbar.classList.remove('menu-open');
+        });
+      })();
+    </script>
 
-    <section class="panel">
+    <section class="panel stats-panel">
       <div class="row">
         <div class="kpi">סה״כ כרטיסיות: <strong><?= $count ?></strong></div>
         <div class="kpi">נסקרו (סה״כ): <strong><?= $seen ?></strong></div>

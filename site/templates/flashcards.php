@@ -14,12 +14,31 @@
       <h3 style="margin:0 0 6px 0;">היי <?= html($userName ?? 'עלמה') ?> 👋</h3>
       <p id="greetLine" class="muted" style="margin:0;">כל הכבוד! התקדמות מעולה.</p>
     </div>
+    <button class="hamburger" type="button" aria-label="תפריט" data-menu-btn>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
     <nav class="nav">
       <a href="<?= url('flashcards/stats') ?>" class="btn">סטטיסטיקות</a>
       <a href="<?= url('flashcards/category-new') ?>" class="btn">הוסף קטגוריה</a>
-      <a href="<?= url('flashcards/test?auto=1') ?>" class="btn">מבחן על הכל</a>
+      <a href="<?= url('flashcards/add') ?>" class="btn">הוסף כרטיסייה</a>
+      <a href="<?= url('flashcards/test?auto=1') ?>" class="btn">מבחן</a>
     </nav>
   </header>
+  <script>
+    // Hamburger toggle for mobile
+    (function(){
+      const topbar = document.currentScript.previousElementSibling; // header.topbar
+      const btn = topbar.querySelector('[data-menu-btn]');
+      if (!btn) return;
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        topbar.classList.toggle('menu-open');
+      });
+      document.addEventListener('click', (e)=>{
+        if (!topbar.contains(e.target)) topbar.classList.remove('menu-open');
+      });
+    })();
+  </script>
 
   <?php
     $userName = 'עלמה';
@@ -119,7 +138,7 @@
           <!-- שורה תחתונה -->
           <div class="card-bottom">
             <a class="icon-btn"
-               href="<?= url('flashcards/test') . '?category=' . urlencode($cat->slug()) . '&auto=1' ?>"
+               href="<?= url('flashcards/test') . '?category=' . urlencode($cat->slug()) ?>"
                title="מבחן בקטגוריה" aria-label="מבחן בקטגוריה">
               <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </a>
@@ -209,7 +228,7 @@
                 <a class="icon-btn" href="<?= url('flashcards/add') . '?category=' . urlencode($cat->slug()) . '&subcategory=' . urlencode($sub->slug()) ?>" title="הוסף כרטיסייה">
                   <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
                 </a>
-                <a class="icon-btn" href="<?= url('flashcards/test') . '?category=' . urlencode($cat->slug()) . '&subcategory=' . urlencode($sub->slug()) . '&auto=1' ?>" title="מבחן">
+                <a class="icon-btn" href="<?= url('flashcards/test') . '?category=' . urlencode($cat->slug()) . '&subcategory=' . urlencode($sub->slug()) ?>" title="מבחן">
                   <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </a>
                 <button class="icon-btn" data-edit title="עריכה">

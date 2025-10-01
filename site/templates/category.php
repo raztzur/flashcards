@@ -11,11 +11,29 @@
 <main class="container">
   <header class="topbar">
     <h1><?= html($page->title()) ?></h1>
+    <button class="hamburger" type="button" aria-label="תפריט" data-menu-btn>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
     <nav class="nav">
       <a href="<?= url('flashcards') ?>" class="btn">← חזרה</a>
       <a href="<?= url('flashcards/test') . '?category=' . urlencode($page->slug()) . '&auto=1' ?>" class="btn">מבחן בקטגוריה</a>
     </nav>
   </header>
+  <script>
+    // Hamburger toggle for mobile (category)
+    (function(){
+      const topbar = document.currentScript.previousElementSibling; // header.topbar
+      const btn = topbar.querySelector('[data-menu-btn]');
+      if (!btn) return;
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        topbar.classList.toggle('menu-open');
+      });
+      document.addEventListener('click', (e)=>{
+        if (!topbar.contains(e.target)) topbar.classList.remove('menu-open');
+      });
+    })();
+  </script>
 
   <!-- טופס נגלל להוספת תת-קטגוריה -->
   <section class="panel" id="subFormPanel" style="display:none;">

@@ -41,6 +41,55 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
   <script>window.CKEDITOR_LICENSE_KEY = 'GPL';</script>
   <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
   <style>
+    /* ===== Modal Styles ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      animation: modalFadeIn 0.2s ease-out;
+    }
+    
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #666;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
+    }
+    
+    .modal-close:hover {
+      background-color: #f3f4f6;
+    }
+
     .ck-editor, .ck.ck-editor { width: 100%; }
     .ck-editor__editable, .ck.ck-editor__editable { min-height: 160px; }
     textarea.rte { resize: none !important; width: 100%; }
@@ -88,7 +137,11 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
   <main class="container">
     <header class="topbar">
       <h1>הוספת כרטיסייה</h1>
-      <nav><a class="btn ghost" href="<?= url('flashcards') ?>">← חזרה לבית</a></nav>
+      <a class="backbtn" href="<?= url('flashcards') ?>" aria-label="חזרה">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </a>
     </header>
 
     <!-- בחירת קטגוריה + תת־קטגוריה + סוג שאלה -->
@@ -218,7 +271,16 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
         <div id="labelOverlay" style="position:absolute; inset:0; pointer-events:none;"></div>
       </div>
 
-      <p class="muted">גררי את התיבות למיקום הרצוי. ניתן לשנות גודל בפינות. לחיצה כפולה על תיבה מאפשרת עריכת תשובות.</p>
+      <div class="muted" style="font-size:13px; line-height:1.4; margin-top:8px;">
+        <strong>הוראות שימוש:</strong><br>
+        • <strong>הוסף תיבה</strong> - יוצר תיבת תשובה חדשה<br>
+        • <strong>לחץ על תיבה</strong> - בוחר תיבה (מסגרת כחולה)<br>
+        • <strong>גרור הנקודה האדומה</strong> - מזיז את נקודת העוגן (מקור הקו)<br>
+        • <strong>גרור תיבה</strong> - מזיז את התיבה<br>
+        • <strong>גרור העיגול הכחול</strong> - משנה גודל תיבה<br>
+        • <strong>לחיצה כפולה על תיבה</strong> - עורך תשובות<br>
+        • <strong>×</strong> - מוחק תיבה
+      </div>
     </section>
 
     <!-- פעולות -->
@@ -239,6 +301,34 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
     </div>
   </div>
 
+  <!-- modal לעריכת תשובות תיוג -->
+  <div id="editAnswersModal" class="modal-overlay">
+    <div class="modal-content" style="max-width:500px; width:100%;">
+      <button id="closeEditAnswers" class="modal-close">✕</button>
+      <h3 style="margin:0 0 16px 0; text-align:center;">עריכת תשובות לתיבה <span id="editBoxId"></span></h3>
+      <div style="margin-bottom:16px;">
+        <label style="display:block; margin-bottom:8px; font-weight:600;">תשובות נכונות (מופרדות בפסיק):</label>
+        <textarea id="editAnswersText" dir="rtl" style="width:100%; min-height:80px; padding:12px; border:1px solid var(--stroke); border-radius:8px; font-family:inherit; resize:vertical;" placeholder="למשל: מיטוכונדריה, mitochondria, בית כוח התא"></textarea>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button id="cancelEditAnswers" class="btn ghost">ביטול</button>
+        <button id="saveEditAnswers" class="btn">שמירה</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal לאישור מחיקה -->
+  <div id="confirmDeleteModal" class="modal-overlay">
+    <div class="modal-content" style="max-width:400px; width:100%;">
+      <h3 style="margin:0 0 16px 0; text-align:center; color:#dc2626;">מחיקת תיבה</h3>
+      <p style="text-align:center; margin:0 0 20px 0;">האם אתה בטוח שברצונך למחוק את תיבה <strong id="deleteBoxId"></strong>?</p>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button id="cancelDelete" class="btn ghost">ביטול</button>
+        <button id="confirmDelete" class="btn" style="background:#dc2626; color:white;">מחק</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const $  = s => document.querySelector(s);
     const $$ = s => Array.from(document.querySelectorAll(s));
@@ -255,6 +345,18 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
     const labelSec = $('#labelSection');
     const optsEl  = $('#opts');
     const msgEl   = $('#msg');
+
+    // Helper: refresh custom select UI after programmatic changes
+    function refreshCustomSelect(selectEl){
+      if (!selectEl) return;
+      const next = selectEl.nextElementSibling;
+      if (next && next.classList && next.classList.contains('custom-select')) {
+        next.remove();
+      }
+      selectEl.removeAttribute('data-customized');
+      selectEl.style.display = '';
+      document.dispatchEvent(new Event('selectsAdded'));
+    }
 
     // מצב עריכה
     let editId = null;
@@ -289,7 +391,8 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
       opt.value = r.slug; opt.textContent = title;
       catEl.appendChild(opt); catEl.value = r.slug;
       quickCatName.value=''; quickCatMsg.textContent='נוצר'; quickCatRow.style.display='none';
-      loadSubcats(r.slug);
+  refreshCustomSelect(catEl);
+  loadSubcats(r.slug);
     });
 
     // הוספה מהירה: תת־קטגוריה
@@ -317,6 +420,31 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
       opt.value = r.slug; opt.textContent = title;
       subEl.appendChild(opt); subEl.value = r.slug;
       quickSubName.value=''; quickSubMsg.textContent='נוצר'; quickSubRow.style.display='none';
+      // Refresh custom UI after programmatic change
+      if (typeof document !== 'undefined') {
+        const next = subEl.nextElementSibling;
+        if (next && next.classList && next.classList.contains('custom-select')) next.remove();
+        subEl.removeAttribute('data-customized');
+        subEl.style.display = '';
+        document.dispatchEvent(new Event('selectsAdded'));
+      }
+    });
+
+    // Event listener לשינוי קטגוריה - טעינת תת-קטגוריות
+    catEl.addEventListener('change', async () => {
+      // מצב טעינה ו-non-selectable עד לקבלת הרשימה
+      if (subEl) {
+        subEl.innerHTML = '<option value="">טוען תת־קטגוריות…</option>';
+        subEl.disabled = true;
+        // Update custom UI to reflect loading state
+        const next = subEl.nextElementSibling;
+        if (next && next.classList && next.classList.contains('custom-select')) next.remove();
+        subEl.removeAttribute('data-customized');
+        subEl.style.display = '';
+        document.dispatchEvent(new Event('selectsAdded'));
+      }
+      await loadSubcats(catEl.value);
+      msgEl.textContent = ''; // מנקה הודעות שגיאה קודמות
     });
 
     // CKEditor
@@ -535,7 +663,31 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   // אם באנו מערוץ "הוספה": בוחרים קטגוריה/תת־קטגוריה מראש
   if (initCat && !initId) {
     catEl.value = initCat;
+    refreshCustomSelect(catEl);
     await loadSubcats(initCat, initSub || '');
+  } else if (!initCat && initSub && !initId) {
+    // מצב: יש תת־קטגוריה ב-URL אך אין קטגוריה – ננסה לאתר את קטגוריית האם
+    try {
+      const options = Array.from(catEl?.options || []);
+      for (const opt of options) {
+        const slug = opt.value;
+        if (!slug) continue;
+        const resp = await fetch('/subcats?category=' + encodeURIComponent(slug));
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        if (data && data.ok && Array.isArray(data.subcategories)) {
+          const found = data.subcategories.find(s => s.slug === initSub);
+          if (found) {
+            catEl.value = slug;
+            refreshCustomSelect(catEl);
+            await loadSubcats(slug, initSub);
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Auto-detect category for sub failed:', err);
+    }
   }
 
   // מצב עריכה: טוען כרטיסייה וממלא שדות
@@ -774,18 +926,34 @@ if (clozeAddBlankBtn){
       const H = labelImg.clientHeight;
 
       labelItems.forEach(item=>{
-        // קו
+        // חישוב מיקומים
+        const ax = denorm(item.anchor.x, W);
+        const ay = denorm(item.anchor.y, H);
+        
+        // מיקום התיבה
+        const boxLeft = denorm(item.box.x, W);
+        const boxTop = denorm(item.box.y, H);
+        const boxWidth = denorm(item.box.w, W);
+        const boxHeight = denorm(item.box.h, H);
+        
+        // מרכז התיבה (לשם חיבור הקו)
+        const boxCenterX = boxLeft + boxWidth / 2;
+        const boxCenterY = boxTop + boxHeight / 2;
+        
+        // קו מהנקודה למרכז התיבה
         const line = document.createElement('div');
-        line.style.position='absolute';
-        line.style.pointerEvents='none';
-        line.style.borderTop='2px solid #111';
-        const ax = denorm(item.anchor.x, W), ay = denorm(item.anchor.y, H);
-        const bx = denorm(item.box.x, W), by = denorm(item.box.y, H);
-        line.style.left = Math.min(ax,bx)+'px';
-        line.style.top  = Math.min(ay,by)+'px';
-        line.style.width = Math.hypot(ax-bx, ay-by) + 'px';
-        line.style.transformOrigin='left top';
-        const angle = Math.atan2(ay-by, ax-bx) * 180 / Math.PI;
+        line.style.position = 'absolute';
+        line.style.pointerEvents = 'none';
+        line.style.borderTop = '2px solid #2563eb';
+        line.style.zIndex = '1';
+        line.style.transformOrigin = '0 0';
+        
+        const length = Math.hypot(boxCenterX - ax, boxCenterY - ay);
+        const angle = Math.atan2(boxCenterY - ay, boxCenterX - ax) * 180 / Math.PI;
+        
+        line.style.left = ax + 'px';
+        line.style.top = ay + 'px';
+        line.style.width = length + 'px';
         line.style.transform = `rotate(${angle}deg)`;
         labelOverlay.appendChild(line);
 
@@ -794,23 +962,50 @@ if (clozeAddBlankBtn){
         box.className='label-box';
         box.dataset.id=String(item.id);
         box.style.position='absolute';
-        box.style.left = denorm(item.box.x, W)+'px';
-        box.style.top  = denorm(item.box.y, H)+'px';
-        box.style.width  = denorm(item.box.w, W)+'px';
-        box.style.height = denorm(item.box.h, H)+'px';
-        box.style.border='1px solid #111';
-        box.style.background='rgba(255,255,255,.9)';
+        box.style.left = boxLeft + 'px';
+        box.style.top = boxTop + 'px';
+        box.style.width = boxWidth + 'px';
+        box.style.height = boxHeight + 'px';
+        box.style.border='2px solid #2563eb';
+        box.style.background='rgba(255,255,255,0.95)';
         box.style.borderRadius='8px';
-        box.style.padding='6px 8px';
+        box.style.padding='8px';
         box.style.cursor='move';
         box.style.pointerEvents='auto';
-        box.innerHTML = `<div style="font-weight:700; margin-bottom:4px;">${item.id}</div><div class="small muted">${(item.answers||[]).join(' / ') || '— תשובה —'}</div><div class="resize-handle" style="position:absolute; width:10px; height:10px; right:-5px; bottom:-5px; background:#111; border-radius:50%; cursor:nwse-resize"></div>`;
+        box.style.display='flex';
+        box.style.flexDirection='column';
+        box.style.zIndex='2';
+        box.innerHTML = `
+          <div style="font-weight:700; margin-bottom:0px; font-size:11px; color:#2563eb; position:absolute;">${item.id}</div>
+          <div style="font-size:16px; color:#666; overflow:hidden; text-overflow:ellipsis; text-align:center; display:flex; align-items:center; justify-content:center; flex:1;">${(item.answers||[]).join(' / ') || 'לחץ פעמיים לעריכה'}</div>
+          <div class="resize-handle" style="position:absolute; width:12px; height:12px; right:-6px; bottom:-6px; background:#2563eb; border-radius:50%; cursor:nwse-resize; border:2px solid white;"></div>
+          <button class="delete-box" style="position:absolute; top:-6px; left:-6px; width:16px; height:16px; background:#dc2626; color:white; border:none; border-radius:50%; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;" title="מחק תיבה">×</button>
+        `;
+        
+        // סימון בחירה
+        if (selectedLabelBox === item.id) {
+          box.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.3)';
+        }
+        
         labelOverlay.appendChild(box);
 
+        // בחירת תיבה
+        box.addEventListener('click', (ev) => {
+          if (ev.detail === 2) return; // מונע התנגשות עם double-click
+          selectedLabelBox = selectedLabelBox === item.id ? null : item.id;
+          renderLabelOverlay();
+          ev.stopPropagation();
+        });
+        
         // גרירה
         box.addEventListener('mousedown', startDrag);
         // עריכה כפולה
         box.addEventListener('dblclick', ()=> editLabelAnswers(item.id));
+        // מחיקת תיבה
+        box.querySelector('.delete-box').addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          showDeleteConfirmation(item.id);
+        });
         // שינוי גודל
         box.querySelector('.resize-handle').addEventListener('mousedown', startResize);
         function startDrag(ev){
@@ -845,16 +1040,154 @@ if (clozeAddBlankBtn){
           window.addEventListener('mouseup', onUp);
         }
       });
+      
+      // הוספת נקודות עוגן
+      labelItems.forEach(item => {
+        const ax = denorm(item.anchor.x, W);
+        const ay = denorm(item.anchor.y, H);
+        
+        const anchor = document.createElement('div');
+        anchor.style.position = 'absolute';
+        anchor.style.left = (ax - 6) + 'px';
+        anchor.style.top = (ay - 6) + 'px';
+        anchor.style.width = '12px';
+        anchor.style.height = '12px';
+        anchor.style.background = '#dc2626';
+        anchor.style.border = '2px solid white';
+        anchor.style.borderRadius = '50%';
+        anchor.style.zIndex = '3';
+        anchor.style.cursor = 'move';
+        anchor.style.pointerEvents = 'auto';
+        anchor.title = `גרור כדי להזיז עוגן ${item.id}`;
+        anchor.dataset.itemId = String(item.id);
+        
+        // גרירת נקודת העוגן
+        anchor.addEventListener('mousedown', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          
+          const startX = ev.clientX;
+          const startY = ev.clientY;
+          const startAx = denorm(item.anchor.x, W);
+          const startAy = denorm(item.anchor.y, H);
+          
+          function onMove(e) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            const newAx = startAx + dx;
+            const newAy = startAy + dy;
+            
+            // עדכון מיקום העוגן
+            item.anchor.x = Math.max(0, Math.min(1, norm(newAx, W)));
+            item.anchor.y = Math.max(0, Math.min(1, norm(newAy, H)));
+            renderLabelOverlay();
+          }
+          
+          function onUp() {
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+          }
+          
+          window.addEventListener('mousemove', onMove);
+          window.addEventListener('mouseup', onUp);
+        });
+        
+        labelOverlay.appendChild(anchor);
+      });
     }
 
     function editLabelAnswers(id){
       const item = labelItems.find(i=>i.id===id);
       if (!item) return;
-      const val = prompt('תשובות אפשריות (מופרדות בפסיק):', (item.answers||[]).join(', '));
-      if (val !== null){
-        item.answers = val.split(',').map(s=>s.trim()).filter(Boolean);
-        renderLabelOverlay();
+      
+      // פתיחת modal לעריכה
+      const modal = document.getElementById('editAnswersModal');
+      const boxIdSpan = document.getElementById('editBoxId');
+      const textarea = document.getElementById('editAnswersText');
+      
+      boxIdSpan.textContent = id;
+      textarea.value = (item.answers||[]).join(', ');
+      modal.style.display = 'flex';
+      textarea.focus();
+      
+      // פונקציה לשמירה
+      const saveBtn = document.getElementById('saveEditAnswers');
+      const cancelBtn = document.getElementById('cancelEditAnswers');
+      const closeBtn = document.getElementById('closeEditAnswers');
+      
+      function closeModal() {
+        modal.style.display = 'none';
       }
+      
+      function saveAnswers() {
+        const val = textarea.value.trim();
+        item.answers = val ? val.split(',').map(s=>s.trim()).filter(Boolean) : [];
+        renderLabelOverlay();
+        closeModal();
+      }
+      
+      // הסרת event listeners קודמים
+      saveBtn.replaceWith(saveBtn.cloneNode(true));
+      cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+      closeBtn.replaceWith(closeBtn.cloneNode(true));
+      
+      // הוספת event listeners חדשים
+      document.getElementById('saveEditAnswers').addEventListener('click', saveAnswers);
+      document.getElementById('cancelEditAnswers').addEventListener('click', closeModal);
+      document.getElementById('closeEditAnswers').addEventListener('click', closeModal);
+      
+      // סגירה בלחיצה על רקע
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+      
+      // שמירה ב-Enter
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          e.preventDefault();
+          saveAnswers();
+        }
+      });
+    }
+
+    function showDeleteConfirmation(id) {
+      const modal = document.getElementById('confirmDeleteModal');
+      const boxIdSpan = document.getElementById('deleteBoxId');
+      
+      boxIdSpan.textContent = id;
+      modal.style.display = 'flex';
+      
+      const confirmBtn = document.getElementById('confirmDelete');
+      const cancelBtn = document.getElementById('cancelDelete');
+      
+      function closeModal() {
+        modal.style.display = 'none';
+      }
+      
+      function deleteBox() {
+        const index = labelItems.findIndex(i => i.id === id);
+        if (index > -1) {
+          labelItems.splice(index, 1);
+          if (selectedLabelBox === id) selectedLabelBox = null;
+          renderLabelOverlay();
+          labelMsg.textContent = `תיבה ${id} נמחקה`;
+          setTimeout(() => labelMsg.textContent = '', 2000);
+        }
+        closeModal();
+      }
+      
+      // הסרת event listeners קודמים
+      confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+      cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+      
+      // הוספת event listeners חדשים
+      document.getElementById('confirmDelete').addEventListener('click', deleteBox);
+      document.getElementById('cancelDelete').addEventListener('click', closeModal);
+      
+      // סגירה בלחיצה על רקע
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
     }
 
     function ensureCanvasVisible(){
@@ -895,30 +1228,63 @@ if (clozeAddBlankBtn){
       labelAddBoxBtn.addEventListener('click', ()=>{
         if (!labelImg.src){ labelMsg.textContent='ראשית יש לטעון תמונה'; return; }
         const id = nextLabelId();
-        // ברירת מחדל: תיבה קטנה בצד ימין, עוגן במרכז
+        // תיבה חדשה במיקום טוב יותר
+        const existingBoxes = labelItems.length;
+        const yOffset = 0.1 + (existingBoxes * 0.15) % 0.7; // מרווח אנכי בין תיבות
+        
+        // חישוב גובה קבוע - 60 פיקסלים יחסית לגובה התמונה הנוכחי
+        const currentImgHeight = labelImg.clientHeight || 400; // fallback אם אין גובה
+        const fixedHeightInPixels = 60; // גובה רצוי בפיקסלים
+        const heightRatio = fixedHeightInPixels / currentImgHeight;
+        
         labelItems.push({
           id,
-          anchor:{ x:0.5, y:0.5 },
-          box:{ x:0.7, y:0.2, w:0.2, h:0.1 },
+          anchor:{ x:0.3, y:0.3 }, // נקודת עוגן בשליש העליון השמאלי
+          box:{ x:0.65, y:yOffset, w:0.25, h:heightRatio }, // תיבה בצד ימין - גובה קבוע של 60px
           answers:[],
           ignoreCase:true, regex:false
         });
         renderLabelOverlay();
+        // הודעה עזר
+        labelMsg.textContent = `נוספה תיבה ${id}. גרור את הנקודה האדומה כדי להזיז את העוגן.`;
+        setTimeout(() => labelMsg.textContent = '', 3000);
       });
     }
 
-    // עוגן: לחיצה על התמונה קובעת עוגן לפריט האחרון
+    // מעקב אחר התיבה שנבחרה
+    let selectedLabelBox = null;
+
+    // עוגן: לחיצה על התמונה קובעת עוגן לתיבה שנבחרה
     labelCanvas?.addEventListener('click', (ev)=>{
       if (!labelItems.length) return;
       if (!labelImg.naturalWidth) return;
+      
+      // אם לחצנו על תיבה, לא על התמונה עצמה
+      if (ev.target !== labelCanvas && ev.target !== labelImg) return;
+      
       const rect = labelCanvas.getBoundingClientRect();
       const W = labelImg.clientWidth;
       const H = labelImg.clientHeight;
       const x = (ev.clientX - rect.left) / W;
       const y = (ev.clientY - rect.top)  / H;
-      const last = labelItems[labelItems.length-1];
-      last.anchor = { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
-      renderLabelOverlay();
+      
+      // אם יש תיבה נבחרת, עדכן את העוגן שלה
+      if (selectedLabelBox) {
+        const item = labelItems.find(i => i.id === selectedLabelBox);
+        if (item) {
+          item.anchor = { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
+          renderLabelOverlay();
+          labelMsg.textContent = `עוגן תיבה ${item.id} עודכן`;
+          setTimeout(() => labelMsg.textContent = '', 2000);
+        }
+      } else {
+        // אחרת, עדכן את העוגן של התיבה האחרונה
+        const last = labelItems[labelItems.length-1];
+        last.anchor = { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
+        renderLabelOverlay();
+        labelMsg.textContent = `עוגן תיבה ${last.id} עודכן`;
+        setTimeout(() => labelMsg.textContent = '', 2000);
+      }
     });
 
     // בעת שינוי גודל התמונה (Responsive), נרנדר שוב
@@ -949,18 +1315,47 @@ if (clozeAddBlankBtn){
     if (addOptBtn) addOptBtn.addEventListener('click', ()=> addOption());
 
 async function loadSubcats(cat, preselectSub = '') {
-  subEl.innerHTML = '<option value="">טוען…</option>';
-  if (!cat) { subEl.innerHTML = '<option value="">בחר תת־קטגוריה…</option>'; return; }
+  if (!subEl) return;
+  subEl.innerHTML = '<option value="">טוען תת־קטגוריות…</option>';
+  subEl.disabled = true;
+  if (!cat) {
+    subEl.innerHTML = '<option value="">קודם בחר קטגוריה</option>';
+    subEl.disabled = true;
+    return;
+  }
   try{
     const r = await fetch('/subcats?category=' + encodeURIComponent(cat));
-    const t = await r.text(); const j = JSON.parse(t);
-    if(!j.ok){ subEl.innerHTML = '<option value="">אין תתי־קטגוריות</option>'; return; }
+    if (!r.ok) {
+      subEl.innerHTML = '<option value="">שגיאה בטעינת תת־קטגוריות</option>';
+      subEl.disabled = false;
+      return;
+    }
+    const j = await r.json();
+    if(!j.ok){ 
+      subEl.innerHTML = '<option value="">אין תת־קטגוריות לקטגוריה זו</option>'; 
+      subEl.disabled = false;
+      return; 
+    }
     const list = j.subcategories || [];
-    subEl.innerHTML = (list.length ? '<option value="">בחר תת־קטגוריה…</option>' : '<option value="">אין תתי־קטגוריות</option>') +
-      list.map(s => `<option value="${s.slug}">${s.title}</option>`).join('');
+    if (list.length === 0) {
+      subEl.innerHTML = '<option value="">אין תת־קטגוריות - נא ליצור תת־קטגוריה חדשה</option>';
+      subEl.disabled = false;
+    } else {
+      subEl.innerHTML = '<option value="">בחר תת־קטגוריה…</option>' +
+        list.map(s => `<option value="${s.slug}">${s.title}</option>`).join('');
+      subEl.disabled = false;
+    }
     if (preselectSub) subEl.value = preselectSub;
+    // Re-init custom select UI after repopulating options
+    const next = subEl.nextElementSibling;
+    if (next && next.classList && next.classList.contains('custom-select')) next.remove();
+    subEl.removeAttribute('data-customized');
+    subEl.style.display = '';
+    document.dispatchEvent(new Event('selectsAdded'));
   }catch(e){
-    subEl.innerHTML = '<option value="">שגיאה בטעינה</option>';
+    console.error('Error loading subcategories:', e);
+    subEl.innerHTML = '<option value="">שגיאה בטעינת תת־קטגוריות</option>';
+    subEl.disabled = false;
   }
 }
 
@@ -984,20 +1379,20 @@ async function loadSubcats(cat, preselectSub = '') {
         return JSON.stringify({ type:'tf', value: val });
       }
       if (t === 'cloze'){
-  const html = (editorQ ? editorQ.getData() : qEl.value || '');
-  const ids = (function(){ const arr=[]; const re=/\{\{\s*(\d+)\s*\}\}/g; let m; while((m=re.exec(html))!==null){ const n=parseInt(m[1],10); if(!arr.includes(n)) arr.push(n);} return arr; })();
-  const rows = [];
-  ids.forEach(id=>{
-    const tr = clozeBlanksTbody.querySelector(`tr[data-id="${id}"]`);
-    if (!tr) return;
-    const answers = tr.querySelector('input[type="text"]').value
-      .split(',')
-      .map(s=>s.trim())
-      .filter(Boolean);
-    rows.push({ id, answers });
-  });
-  return JSON.stringify({ type:'cloze', blanks: rows });
-}
+        const html = (editorQ ? editorQ.getData() : qEl.value || '');
+        const ids = (function(){ const arr=[]; const re=/\{\{\s*(\d+)\s*\}\}/g; let m; while((m=re.exec(html))!==null){ const n=parseInt(m[1],10); if(!arr.includes(n)) arr.push(n);} return arr; })();
+        const rows = [];
+        ids.forEach(id=>{
+          const tr = clozeBlanksTbody.querySelector(`tr[data-id="${id}"]`);
+          if (!tr) return;
+          const answers = tr.querySelector('input[type="text"]').value
+            .split(',')
+            .map(s=>s.trim())
+            .filter(Boolean);
+          rows.push({ id, answers });
+        });
+        return JSON.stringify({ type:'cloze', blanks: rows });
+      }
       if (t === 'label'){
         const img = labelImg?.src || '';
         return JSON.stringify({ type:'label', image: img, items: labelItems });
@@ -1014,10 +1409,17 @@ async function loadSubcats(cat, preselectSub = '') {
       const question    = (editorQ ? editorQ.getData() : (document.getElementById('q')?.value || '') ).trim();
       const answer      = buildAnswerByType();
 
-      if (!category){ msgEl.textContent = 'בחר קטגוריה'; return; }
-      if (!subcategory){ msgEl.textContent = 'בחר תת־קטגוריה'; return; }
-      if (!question){ msgEl.textContent = 'כתוב שאלה'; return; }
-      if (type === 'free' && !answer){ msgEl.textContent = 'כתוב תשובה'; return; }
+      if (!category){ msgEl.textContent = 'יש לבחור קטגוריה קודם'; return; }
+      if (!subcategory){ msgEl.textContent = 'יש לבחור תת־קטגוריה קודם'; return; }
+      if (!question){ msgEl.textContent = 'יש לכתוב שאלה'; return; }
+      if (type === 'free' && !answer){ msgEl.textContent = 'יש לכתוב תשובה לשאלה חופשית'; return; }
+      if (type === 'label' && (!answer || answer === '""' || answer === 'null')){ 
+        msgEl.textContent = 'יש להוסיף לפחות תיבת תיוג אחת לתמונה'; 
+        return; 
+      }
+
+      // Debug logging
+      console.log('About to send:', { category, subcategory, type, question, answer });
 
       msgEl.textContent = editMode ? 'מעדכן…' : 'שומר…';
 
@@ -1128,9 +1530,46 @@ async function loadSubcats(cat, preselectSub = '') {
               </div>
         `;
       } else if (type === 'label') {
-        body += `
-              <div><em>תצוגה מקדימה לסוג "תיוג" במצב גלוי אינה נתמכת כאן</em></div>
-        `;
+        // Preview for label type - show image with all answers revealed
+        let labelData = {};
+        try { labelData = JSON.parse(answer||'{}'); } catch(e) { labelData = {}; }
+        
+        const imageUrl = labelData.image || '';
+        const items = labelData.items || [];
+        
+        if (!imageUrl) {
+          body += `<div><em>יש להוסיף תמונה כדי לראות תצוגה מקדימה</em></div>`;
+        } else {
+          body += `
+              <div class="label-interaction">
+                <div style="position:relative; display:inline-block; max-width:100%;">
+                  <img src="${imageUrl}" alt="תמונה לתיוג" style="max-width:100%; height:auto; display:block;">
+                  <div class="label-preview-overlay" style="position:absolute; inset:0; pointer-events:none;">
+          `;
+          
+          // Add all the revealed answers (simplified version)
+          items.forEach(item => {
+            const answers = (item.answers || []).join(' / ') || 'תיבה ' + item.id;
+            const boxLeft = Math.round(item.box.x * 100);
+            const boxTop = Math.round(item.box.y * 100);
+            const boxWidth = Math.round(item.box.w * 100);
+            const boxHeight = Math.round(item.box.h * 100);
+            const anchorLeft = Math.round(item.anchor.x * 100);
+            const anchorTop = Math.round(item.anchor.y * 100);
+            
+            body += '<div style="position:absolute; left:' + boxLeft + '%; top:' + boxTop + '%; width:' + boxWidth + '%; height:' + boxHeight + '%; background:rgba(40,167,69,0.9); color:white; border-radius:8px; padding:8px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; text-align:center;">' + escapeHtml(answers) + '</div>';
+            body += '<div style="position:absolute; left:' + anchorLeft + '%; top:' + anchorTop + '%; width:8px; height:8px; background:#28a745; border:2px solid white; border-radius:50%; transform:translate(-50%,-50%);"></div>';
+          });
+          
+          body += `
+                  </div>
+                </div>
+                <div class="result-display result-correct" style="margin-top:12px;">
+                  תצוגת כל התשובות הנכונות
+                </div>
+              </div>
+          `;
+        }
       }
 
       body += `

@@ -423,17 +423,29 @@ return [
         $b = safe_body();
 
         $catSlug = trim((string)($b['category'] ?? get('category') ?? '')); 
-        if($catSlug==='') return json_err('Missing category slug');
-        $cat = $root->find($catSlug); if(!$cat) return json_err('Category not found',404);
+        if($catSlug==='') return json_err('חובה לבחור קטגוריה');
+        $cat = $root->find($catSlug); if(!$cat) return json_err('קטגוריה לא נמצאה',404);
 
         $subSlug = trim((string)($b['subcategory'] ?? $b['sub'] ?? get('subcategory') ?? get('sub') ?? ''));
-        if ($subSlug==='') return json_err('Missing subcategory slug'); // ❗ חובה תת־קטגוריה
-        $sub = $cat->find($subSlug); if(!$sub) return json_err('Subcategory not found',404);
+        if ($subSlug==='') return json_err('חובה לבחור תת־קטגוריה'); 
+        $sub = $cat->find($subSlug); if(!$sub) return json_err('תת־קטגוריה לא נמצאה',404);
 
         $type = $b['type'] ?? 'free';
         $q    = trim((string)($b['question'] ?? ''));
         $a    = (string)($b['answer'] ?? '');
-        if ($type==='free' && ($q==='' || trim($a)==='')) return json_err('Missing question/answer');
+        
+        // בדיקות בסיסיות
+        if ($q==='') return json_err('חובה לכתוב שאלה');
+        
+        // בדיקות לפי סוג שאלה
+        if ($type==='free' && trim($a)==='') return json_err('חובה לכתוב תשובה לשאלה חופשית');
+        if ($type==='label' && ($a==='' || $a==='""' || $a==='null')) return json_err('חובה להוסיף תיבות תיוג לתמונה');
+        if ($type==='mc') {
+          $answerData = json_decode($a, true);
+          if (!$answerData || !isset($answerData['options']) || empty($answerData['options'])) {
+            return json_err('חובה להוסיף אפשרויות לשאלה אמריקאית');
+          }
+        }
 
         $slugBase = \Kirby\Toolkit\Str::slug(substr(strip_tags($q) ?: 'card', 0, 60)) ?: 'card';
         $slug=$slugBase; $i=1; $base=$slug; while($sub->find($slug)) $slug = $base.'-'.$i++;
@@ -447,12 +459,32 @@ return [
         ];
 
         try{
+          error_log("DEBUG: About to create page with content: " . json_encode($content));
           $prev = kirby()->user(); kirby()->impersonate('kirby');
+          
+          error_log("DEBUG: Creating page with slug: $slug, template: card, parent: " . $sub->id());
           $page = \Kirby\Cms\Page::create(['slug'=>$slug,'template'=>'card','parent'=>$sub,'content'=>$content]);
-          if (method_exists($page,'changeStatus')) $page = $page->changeStatus('listed');
-          elseif (method_exists($page,'publish'))  $page = $page->publish();
-        } catch(\Throwable $e){ return json_err('Create failed: '.$e->getMessage(),500);
-        } finally { kirby()->impersonate($prev ? $prev->id() : null); }
+          error_log("DEBUG: Page created successfully: " . $page->id());
+          
+          if (method_exists($page,'changeStatus')) {
+            error_log("DEBUG: Using changeStatus method");
+            $page = $page->changeStatus('listed');
+            error_log("DEBUG: Status changed to listed");
+          } elseif (method_exists($page,'publish')) {
+            error_log("DEBUG: Using publish method"); 
+            $page = $page->publish();
+            error_log("DEBUG: Page published");
+          }
+          
+          error_log("DEBUG: Final page status: " . $page->status());
+        } catch(\Throwable $e){ 
+          error_log("DEBUG: Exception caught: " . $e->getMessage());
+          error_log("DEBUG: Exception trace: " . $e->getTraceAsString());
+          return json_err('Create failed: '.$e->getMessage(),500);
+        } finally { 
+          error_log("DEBUG: Finally block - restoring user");
+          kirby()->impersonate($prev ? $prev->id() : null); 
+        }
 
         return json_ok(['slug'=>$page->slug(),'id'=>$page->id()]);
       }
