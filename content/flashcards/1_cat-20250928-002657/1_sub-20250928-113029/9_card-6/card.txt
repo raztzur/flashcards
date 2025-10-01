@@ -1,0 +1,41 @@
+Title: ככ
+
+----
+
+Type: free
+
+----
+
+Question: <h1>ככ</h1>
+
+----
+
+Answer: <p>ככ</p>
+
+----
+
+Difficulty: medium
+
+----
+
+Tags: 
+
+----
+
+Notes: 
+
+----
+
+Box: 3
+
+----
+
+Seen: 0
+
+----
+
+Correct: 0
+
+----
+
+Uuid: rgkxrtndo5uzpt0r
