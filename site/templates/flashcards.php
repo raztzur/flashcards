@@ -290,8 +290,8 @@
     });
   })();
 
-  // עריכה/מחיקה קטגוריה
-  document.querySelectorAll('[data-slug]').forEach(row=>{
+  // עריכה/מחיקה קטגוריה (רק כרטיסי קטגוריה, לא תת-קטגוריות)
+  document.querySelectorAll('.card[data-slug]').forEach(row=>{
     const slug=row.getAttribute('data-slug');
     const addSubBtn = row.querySelector('[data-add-sub]');
     const editBtn=row.querySelector('[data-edit]');
@@ -424,6 +424,45 @@
         row.remove();
       });
     }
+  });
+
+  // הוספת לוגיקה למחיקת תת-קטגוריות
+  document.querySelectorAll('.subcard[data-slug]').forEach(subRow=>{
+    const subSlug = subRow.getAttribute('data-slug');
+    const categoryCard = subRow.closest('.category-card');
+    const catSlug = categoryCard ? categoryCard.querySelector('.card').getAttribute('data-slug') : null;
+    const delBtn = subRow.querySelector('[data-delete]');
+    
+    if (!delBtn || !catSlug) return;
+    
+    let armed=false, timer=null;
+    function disarm(){ 
+      armed=false; 
+      delBtn.classList.remove('danger'); 
+      delBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>'; 
+      if (timer){ clearTimeout(timer); timer=null; } 
+    }
+    
+    delBtn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      if (!armed){ 
+        armed=true; 
+        delBtn.classList.add('danger'); 
+        delBtn.innerHTML='בטוח?'; 
+        timer=setTimeout(disarm,5000);
+        return; 
+      }
+      const res = await postJSON('<?= url('subcats/delete') ?>', { category: catSlug, slug: subSlug });
+      if(!res.ok){ 
+        alert('שגיאה: '+(res.error||'')); 
+        disarm(); 
+        return; 
+      }
+      subRow.remove();
+    });
+    
+    // ביטול הzbrojení בלחיצה מחוץ לכפתור
+    document.addEventListener('click', (ev)=>{ if (!delBtn.contains(ev.target)) disarm(); });
   });
 
   // תמיכה בתפריט נפתח  

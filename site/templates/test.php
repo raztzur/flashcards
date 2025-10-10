@@ -19,10 +19,31 @@ $initialSub = get('subcategory') ?? get('sub');
     .qa{ display:flex; flex-direction:column; gap:12px; }
     .question-area{
       min-height: var(--question-h);
-      max-height: var(--question-h);
+      /* Remove max-height to allow long questions to be fully visible */
       overflow:auto;
       /* ללא מסגרת/רקע - שאלה "ערומה" בתוך ה-div */
       padding:0; border:0; background:transparent;
+    }
+    
+    /* Question section styling for better long question handling */
+    .question-section {
+      flex: 0 0 auto; /* Don't shrink, grow as needed */
+      max-height: 60vh; /* Maximum 60% of viewport height */
+      overflow-y: auto;
+      padding-bottom: 8px;
+    }
+    
+    #qHtml {
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+    
+    /* Interaction area adjusts to remaining space */
+    .interaction-area {
+      flex: 1 1 auto; /* Take remaining space */
+      min-height: 200px; /* Minimum space for interactions */
+      display: flex;
+      flex-direction: column;
     }
     .answer-box{
       border:1px solid var(--stroke);
@@ -760,6 +781,7 @@ $initialSub = get('subcategory') ?? get('sub');
     const savedState = cardStates[cardKey];
     
     console.log('Loading state for card', cardKey, savedState);
+    console.log('selectedQuality variable:', selectedQuality);
     
     if (!savedState) return;
     
@@ -772,16 +794,34 @@ $initialSub = get('subcategory') ?? get('sub');
           flipBtn.style.display = 'none'; // הסתר את הכפתור הראשי
           showQualityButtons();
           
-          // שחזור איכות נבחרת
+          // שחזור איכות נבחרת - רק אם התשובה כבר נראית
           if (savedState.selectedQuality !== null && savedState.selectedQuality !== undefined) {
+            console.log('RESTORING quality selection:', savedState.selectedQuality, 'answerVisible:', savedState.answerVisible);
             selectedQuality = savedState.selectedQuality;
             clearQualitySelection();
             
             // סימון הכפתור הנכון
-            if (selectedQuality === 2) markWrong.classList.add('selected');
-            else if (selectedQuality === 3) markPartial.classList.add('selected');
-            else if (selectedQuality === 4) markRight.classList.add('selected');
+            if (selectedQuality === 2) {
+              console.log('Adding selected class to markWrong');
+              markWrong.classList.add('selected');
+            }
+            else if (selectedQuality === 3) {
+              console.log('Adding selected class to markPartial');
+              markPartial.classList.add('selected');
+            }
+            else if (selectedQuality === 4) {
+              console.log('Adding selected class to markRight');
+              markRight.classList.add('selected');
+            }
           }
+        } else {
+          // אם התשובה לא נראית, ודא שאין בחירת איכות
+          selectedQuality = null;
+          clearQualitySelection();
+          // כפייה נוספת - הסר את הcssClass גם מהDOM
+          markWrong.classList.remove('selected');
+          markPartial.classList.remove('selected'); 
+          markRight.classList.remove('selected');
         }
         break;
         
@@ -905,16 +945,49 @@ $initialSub = get('subcategory') ?? get('sub');
     const c = deck[pos]; 
     const type = c.type || 'free';
 
+    // Debug logging
+    console.log('=== SHOWING NEW CARD ===');
+    console.log('Card position:', pos);
+    console.log('selectedQuality at start:', selectedQuality);
+    if (markWrong && markRight) {
+      console.log('markWrong classes at start:', markWrong.classList.toString());
+      console.log('markRight classes at start:', markRight.classList.toString());
+    }
+
+    // איפוס מצב איכות כדי למנוע שהצבע יעבור לכרטיס הבא
+    selectedQuality = null;
+
+    // פונקציה לניקוי HTML entities
+    function cleanHtmlEntities(html) {
+      if (!html) return '';
+      return html.replace(/&nbsp;/g, ' ')
+                 .replace(/&amp;/g, '&')
+                 .replace(/&lt;/g, '<')
+                 .replace(/&gt;/g, '>')
+                 .replace(/&quot;/g, '"');
+    }
+
     // הצגת השאלה
     if (type === 'cloze') {
-      qHtml.innerHTML = renderClozeQuestion(c.question || '');
+      qHtml.innerHTML = renderClozeQuestion(cleanHtmlEntities(c.question || ''));
     } else {
-      qHtml.innerHTML = c.question || '';
+      qHtml.innerHTML = cleanHtmlEntities(c.question || '');
     }
 
     // איפוס כל האזורים
     hideAllInteractionAreas();
     hideQualityButtons(); // איפוס כפתורי האיכות
+    
+    // כפייה נוספת - ודא שאין בחירות איכות נשארות
+    selectedQuality = null;
+    clearQualitySelection();
+    
+    // כפייה קיצונית - הסר selected class בכל מקרה
+    setTimeout(() => {
+      if (markWrong) markWrong.classList.remove('selected');
+      if (markPartial) markPartial.classList.remove('selected'); 
+      if (markRight) markRight.classList.remove('selected');
+    }, 50);
     
     // הצגת האזור המתאים לסוג השאלה
     switch(type) {
@@ -964,6 +1037,13 @@ $initialSub = get('subcategory') ?? get('sub');
     flipBtn.style.display = ''; // איפוס מפורש של הכפתור
     selectedQuality = null; // איפוס בחירת איכות
     clearQualitySelection(); // איפוס צבעים
+    
+    // כפייה נוספת - הסר selected class מכל הכפתורים
+    setTimeout(() => {
+      markWrong.classList.remove('selected');
+      markPartial.classList.remove('selected'); 
+      markRight.classList.remove('selected');
+    }, 0);
   }
 
   // שאלה אמריקאית
@@ -1024,8 +1104,8 @@ $initialSub = get('subcategory') ?? get('sub');
     tfFalse.dataset.correct = !correctAnswer;
     
     // איפוס מצב הכפתורים
-    tfTrue.classList.remove('correct', 'incorrect', 'selected');
-    tfFalse.classList.remove('correct', 'incorrect', 'selected');
+    tfTrue.classList.remove('correct', 'incorrect', 'selected', 'result-correct', 'result-incorrect');
+    tfFalse.classList.remove('correct', 'incorrect', 'selected', 'result-correct', 'result-incorrect');
     tfTrue.style.pointerEvents = 'auto';
     tfFalse.style.pointerEvents = 'auto';
     
@@ -1201,6 +1281,12 @@ $initialSub = get('subcategory') ?? get('sub');
     saveCardState(); // שמירת הבחירה
   }
 
+  // פונקציה עזר להצגת הערות
+  function formatNotes(notes, isCorrect) {
+    if (!notes || notes.trim() === '') return '';
+    return `<div class="answer-notes" style="margin-top: 10px; padding: 8px; background: ${isCorrect ? '#f0f8f0' : '#fff8f0'}; border-right: 3px solid ${isCorrect ? '#4CAF50' : '#FF9800'}; font-size: 13px; line-height: 1.4; border-radius: 4px;"><strong>💡 הערות:</strong> ${notes}</div>`;
+  }
+
   function submitTFAnswer() {
     if (selectedTFAnswer === null) return;
     
@@ -1227,9 +1313,20 @@ $initialSub = get('subcategory') ?? get('sub');
     tfSubmit.style.display = 'none';
     
     // הצגת תוצאה
+    const currentCard = deck[pos];
+    let answerData = null;
+    let notes = '';
+    try {
+      answerData = JSON.parse(currentCard.answer || '{}');
+      notes = answerData.notes || '';
+    } catch(e) {
+      console.error('שגיאה בפענוח נתוני תשובה:', e);
+    }
+    
     tfResult.innerHTML = isCorrect ? 
       '<strong style="color: green;">✓ תשובה נכונה!</strong>' : 
       '<strong style="color: red;">✗ תשובה שגויה</strong>';
+    tfResult.innerHTML += formatNotes(notes, isCorrect);
     tfResult.className = 'result-display ' + (isCorrect ? 'result-correct' : 'result-incorrect');
     tfResult.style.display = '';
   }
@@ -1255,9 +1352,16 @@ $initialSub = get('subcategory') ?? get('sub');
   }
 
   function clearQualitySelection() {
+    console.log('clearQualitySelection called');
+    console.log('Before clearing - markWrong classes:', markWrong.classList.toString());
+    console.log('Before clearing - markRight classes:', markRight.classList.toString());
+    
     markWrong.classList.remove('selected');
     markPartial.classList.remove('selected'); 
     markRight.classList.remove('selected');
+    
+    console.log('After clearing - markWrong classes:', markWrong.classList.toString());
+    console.log('After clearing - markRight classes:', markRight.classList.toString());
   }
 
   function selectQuality(quality, button) {
@@ -1417,7 +1521,7 @@ $initialSub = get('subcategory') ?? get('sub');
     const percentage = Math.round((correctCount / totalCount) * 100);
     
     // הצגת התוצאה באזור התוצאה (לא לשנות את השאלה עצמה)
-    clozeResult.innerHTML = `
+    let resultHTML = `
       <div style="margin-bottom: 12px;">
         <strong>התשובה המלאה:</strong><br>
         <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; margin-top: 8px; text-align: right;">
@@ -1428,6 +1532,20 @@ $initialSub = get('subcategory') ?? get('sub');
         <strong>תוצאה:</strong> ${correctCount}/${totalCount} נכון (${percentage}%)
       </div>
     `;
+    
+    // הוספת הערות אם קיימות
+    let answerData = null;
+    let notes = '';
+    try {
+      answerData = JSON.parse(c.answer || '{}');
+      notes = answerData.notes || '';
+    } catch(e) {
+      console.error('שגיאה בפענוח נתוני תשובה:', e);
+    }
+    
+    resultHTML += formatNotes(notes, isAllCorrect);
+    
+    clozeResult.innerHTML = resultHTML;
     
     clozeResult.className = 'result-display ' + (isAllCorrect ? 'result-correct' : 'result-incorrect');
     clozeResult.style.display = '';
@@ -1609,9 +1727,20 @@ const putProgress = (id, row) =>
     });
     
     // הצגת תוצאה
+    const currentCard = deck[pos];
+    let answerData = null;
+    let notes = '';
+    try {
+      answerData = JSON.parse(currentCard.answer || '{}');
+      notes = answerData.notes || '';
+    } catch(e) {
+      console.error('שגיאה בפענוח נתוני תשובה:', e);
+    }
+    
     mcResult.innerHTML = isCorrect ? 
       '<strong style="color: green;">✓ תשובה נכונה!</strong>' : 
       '<strong style="color: red;">✗ תשובה שגויה</strong>';
+    mcResult.innerHTML += formatNotes(notes, isCorrect);
     mcResult.className = 'result-display ' + (isCorrect ? 'result-correct' : 'result-incorrect');
     mcResult.style.display = '';
     
@@ -1685,12 +1814,19 @@ const putProgress = (id, row) =>
     // הצגת תוצאות
     const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
     const resultClass = percentage >= 80 ? 'result-correct' : percentage >= 60 ? 'result-partial' : 'result-wrong';
+    const isCorrect = percentage >= 80;
     
-    labelResult.innerHTML = `
+    let resultHTML = `
       <div class="${resultClass}">
         <strong>${correctCount}/${totalCount} נכון (${percentage}%)</strong>
       </div>
     `;
+    
+    // הוספת הערות אם קיימות
+    const notes = answerData.notes || '';
+    resultHTML += formatNotes(notes, isCorrect);
+    
+    labelResult.innerHTML = resultHTML;
     labelResult.style.display = 'block';
     labelSubmit.style.display = 'none';
     

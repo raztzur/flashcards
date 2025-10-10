@@ -94,23 +94,33 @@
         "dueAt": "2025-10-04T23:00:39+00:00"
     },
     "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-5": {
-        "seen": 7,
+        "seen": 8,
         "correct": 4,
         "box": 4,
-        "updatedAt": "2025-09-30T19:27:37+00:00",
-        "easiness": 2.0799999999999996,
-        "interval": 497,
-        "repetitions": 7,
-        "dueAt": "2027-02-09T19:27:37+00:00"
+        "updatedAt": "2025-10-08T19:07:03+00:00",
+        "easiness": 1.9399999999999997,
+        "interval": 1034,
+        "repetitions": 8,
+        "dueAt": "2028-08-07T19:07:03+00:00"
     },
     "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-4": {
-        "seen": 1,
-        "correct": 0,
+        "seen": 3,
+        "correct": 2,
         "box": 4,
-        "updatedAt": "2025-09-30T19:27:29+00:00",
+        "updatedAt": "2025-10-08T19:06:59+00:00",
         "easiness": 2.36,
+        "interval": 14,
+        "repetitions": 3,
+        "dueAt": "2025-10-22T19:06:59+00:00"
+    },
+    "flashcards\/cat-20250928-002657\/sub-20250928-113029\/card-6": {
+        "seen": 1,
+        "correct": 1,
+        "box": 4,
+        "updatedAt": "2025-10-08T19:06:45+00:00",
+        "easiness": 2.5,
         "interval": 1,
         "repetitions": 1,
-        "dueAt": "2025-10-01T19:27:29+00:00"
+        "dueAt": "2025-10-09T19:06:45+00:00"
     }
 }

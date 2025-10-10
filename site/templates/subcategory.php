@@ -60,20 +60,20 @@ $avgEf = $efCount ? ($efSum / $efCount) : null;
       border:1px solid var(--stroke); border-radius:10px; overflow:hidden; background:#fff;
     }
     .rowcard{
-      display:grid; grid-template-columns: 1fr 240px auto; gap:6px; align-items:center;
+      display:grid; grid-template-columns: 1fr 160px auto; gap:6px; align-items:center;
       padding:6px 8px; border-bottom:1px solid var(--stroke);
       background:#fff; /* table-like rows */
     }
     .rowcard:last-child{ border-bottom:none; }
     .qtitle{ font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; font-size:14px; }
-  .qstats{ color:var(--ink-muted); font-size:12px; display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-start; }
+  .qstats{ color:var(--ink-muted); font-size:12px; display:flex; gap:12px; flex-wrap:nowrap; justify-content:flex-start; white-space:nowrap; }
     .rowactions{ display:flex; gap:4px; align-items:center; justify-content:flex-start; }
 
     
 
-    @media (max-width: 880px){
+    @media (max-width: 600px){
       .rowcard{ grid-template-columns: 1fr auto; row-gap:4px; }
-      .qstats{ grid-column: 1 / -1; }
+      .qstats{ display: none; }
     }
     .editpane{ display:none; grid-column:1 / -1; border-top:1px dashed var(--stroke); padding-top:10px; }
     .editpane.show{ display:block; }
@@ -249,6 +249,11 @@ $avgEf = $efCount ? ($efSum / $efCount) : null;
       const { type, question, answer } = card;
       const escapeHtml = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
       const renderClozeQuestion = html => (html||'').replace(/\{\{\s*(\d+)\s*\}\}/g, (_m, num) => `<span class="cloze-blank" data-id="${num}"><sup>${num}</sup><input type="text" inputmode="text" autocomplete="off" /></span>`);
+      
+      function formatPreviewNotes(notes) {
+        if (!notes || notes.trim() === '') return '';
+        return `<div class="preview-notes" style="margin-top: 12px; padding: 10px; background: #f0f8f0; border-right: 3px solid #4CAF50; font-size: 13px; line-height: 1.4; border-radius: 4px;"><strong>💡 הערות:</strong> ${escapeHtml(notes)}</div>`;
+      }
 
       let qHtml = (type === 'cloze') ? renderClozeQuestion(question) : question;
       let body = `
@@ -268,16 +273,27 @@ $avgEf = $efCount ? ($efSum / $efCount) : null;
         `;
       } else if (type === 'mc') {
         let options = [];
-        try { options = (JSON.parse(answer||'{}').options) || []; } catch(e) { options = []; }
+        let notes = '';
+        try { 
+          const answerData = JSON.parse(answer||'{}');
+          options = answerData.options || [];
+          notes = answerData.notes || '';
+        } catch(e) { options = []; }
         const optsHtml = options.map(o => `<div class="mc-option ${o.correct ? 'correct' : ''}">${escapeHtml(o.text||'')}</div>`).join('');
         body += `
               <div class="mc-interaction">
                 <div class="mc-options">${optsHtml}</div>
-                <div class="result-display result-correct">התשובה הנכונה מסומנת בירוק</div>
+                <div class="result-display result-correct">התשובה הנכונה מסומנת בירוק${formatPreviewNotes(notes)}</div>
               </div>
         `;
       } else if (type === 'tf') {
-        let correctVal = true; try { const j = JSON.parse(answer||'{}'); correctVal = !!j.value; } catch(e) {}
+        let correctVal = true;
+        let notes = '';
+        try { 
+          const j = JSON.parse(answer||'{}'); 
+          correctVal = !!j.value;
+          notes = j.notes || '';
+        } catch(e) {}
         const tTrueClass = correctVal ? 'tf-option result-correct' : 'tf-option';
         const tFalseClass = !correctVal ? 'tf-option result-correct' : 'tf-option';
         body += `
@@ -286,13 +302,15 @@ $avgEf = $efCount ? ($efSum / $efCount) : null;
                   <button class="btn ${tTrueClass}">נכון</button>
                   <button class="btn ${tFalseClass}">לא נכון</button>
                 </div>
-                <div class="result-display result-correct">זו התשובה הנכונה</div>
+                <div class="result-display result-correct">זו התשובה הנכונה${formatPreviewNotes(notes)}</div>
               </div>
         `;
       } else if (type === 'cloze') {
         let correctAnswers = {};
+        let notes = '';
         try {
           const ans = JSON.parse(answer||'{}');
+          notes = ans.notes || '';
           if (ans && Array.isArray(ans.blanks)) {
             ans.blanks.forEach(b=>{ if (b && b.id != null) correctAnswers[b.id] = (b.answers||[])[0] || ''; });
           }
@@ -308,7 +326,7 @@ $avgEf = $efCount ? ($efSum / $efCount) : null;
               <div class="cloze-interaction">
                 <div class="result-display result-correct">
                   <div style="margin-bottom:8px;"><strong>התשובה המלאה:</strong></div>
-                  <div class="ck-content" style="text-align:right;">${full}</div>
+                  <div class="ck-content" style="text-align:right;">${full}</div>${formatPreviewNotes(notes)}
                 </div>
               </div>
         `;

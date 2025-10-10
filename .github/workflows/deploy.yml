@@ -1,0 +1,55 @@
+name: Deploy to alma.cards
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install rsync
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy via rsync (exclude content, cache, sessions)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_DEST: ${{ secrets.SSH_DEST }}
+        run: |
+          rsync -avz --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='content/' \
+            --exclude='site/cache/' \
+            --exclude='site/sessions/' \
+            --exclude='media/.jobs/' \
+            ./ "$SSH_USER@$SSH_HOST:$SSH_DEST/"
+
+      - name: Clear Kirby cache and set permissions
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_DEST: ${{ secrets.SSH_DEST }}
+        run: |
+          ssh "$SSH_USER@$SSH_HOST" "rm -rf '$SSH_DEST/site/cache/'* || true && chmod -R 755 '$SSH_DEST' || true"

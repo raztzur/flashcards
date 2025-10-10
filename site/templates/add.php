@@ -30,6 +30,19 @@ if (!function_exists('svg')) {
 header('Content-Type: text/html; charset=utf-8');
 $root = page('flashcards');
 $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
+
+// Determine smart back URL based on context
+$initialCat = get('category');
+$initialSub = get('subcategory') ?? get('sub');
+$backUrl = url('flashcards'); // default
+
+if ($initialCat && $initialSub) {
+  // If both category and subcategory are specified, go back to the subcategory page
+  $backUrl = url('flashcards/' . $initialCat . '/' . $initialSub);
+} elseif ($initialCat) {
+  // If only category is specified, go back to the category page
+  $backUrl = url('flashcards/' . $initialCat);
+}
 ?>
 <!doctype html>
 <html lang="he" dir="rtl">
@@ -137,7 +150,10 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
   <main class="container">
     <header class="topbar">
       <h1>הוספת כרטיסייה</h1>
-      <a class="backbtn" href="<?= url('flashcards') ?>" aria-label="חזרה">
+      <nav class="nav">
+        <a href="<?= $backUrl ?>" class="btn">← חזרה</a>
+      </nav>
+      <a class="backbtn" href="<?= $backUrl ?>" aria-label="חזרה">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
         </svg>
@@ -214,6 +230,12 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
         <button type="button" class="btn" id="addOpt">הוסף אפשרות</button>
       </div>
       <div class="options" id="opts"></div>
+      
+      <div style="margin-top: 15px;">
+        <label for="mcNotes" style="font-size: 14px; color: var(--text-light);">הערות נוספות (אופציונלי)</label>
+        <textarea id="mcNotes" class="field" placeholder="הסבר נוסף או מידע רקע לתשובה..." style="min-height: 60px; font-size: 13px; resize: vertical;"></textarea>
+      </div>
+      
       <p class="muted">המידע נשמר כ־JSON בשדה התשובה.</p>
     </section>
 
@@ -224,6 +246,12 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
         <label><input type="radio" name="tf" value="true" checked> נכון</label>
         <label><input type="radio" name="tf" value="false"> לא נכון</label>
       </div>
+      
+      <div style="margin-top: 15px;">
+        <label for="tfNotes" style="font-size: 14px; color: var(--text-light);">הערות נוספות (אופציונלי)</label>
+        <textarea id="tfNotes" class="field" placeholder="הסבר למה התשובה נכונה או לא נכונה..." style="min-height: 60px; font-size: 13px; resize: vertical;"></textarea>
+      </div>
+      
       <p class="muted">המידע נשמר כ־JSON בשדה התשובה.</p>
     </section>
 
@@ -249,6 +277,11 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
       </thead>
       <tbody id="clozeBlanks"></tbody>
     </table>
+  </div>
+  
+  <div style="margin-top: 15px;">
+    <label for="clozeNotes" style="font-size: 14px; color: var(--text-light);">הערות נוספות (אופציונלי)</label>
+    <textarea id="clozeNotes" class="field" placeholder="הסבר נוסף על ההשלמות..." style="min-height: 60px; font-size: 13px; resize: vertical;"></textarea>
   </div>
 </section>
 
@@ -280,6 +313,11 @@ $cats = $root ? $root->children()->filterBy('intendedTemplate','category') : [];
         • <strong>גרור העיגול הכחול</strong> - משנה גודל תיבה<br>
         • <strong>לחיצה כפולה על תיבה</strong> - עורך תשובות<br>
         • <strong>×</strong> - מוחק תיבה
+      </div>
+      
+      <div style="margin-top: 15px;">
+        <label for="labelNotes" style="font-size: 14px; color: var(--text-light);">הערות נוספות (אופציונלי)</label>
+        <textarea id="labelNotes" class="field" placeholder="הסבר נוסף על התיוגים..." style="min-height: 60px; font-size: 13px; resize: vertical;"></textarea>
       </div>
     </section>
 
@@ -725,6 +763,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         const arr = (data && Array.isArray(data.options)) ? data.options : [];
         if (arr.length) { arr.forEach(o => addOption(o.text || '', !!o.correct)); }
         else { addOption(); addOption(); }
+        // טען הערות
+        const mcNotesEl = document.getElementById('mcNotes');
+        if (mcNotesEl && data && data.notes) {
+          mcNotesEl.value = data.notes;
+        }
       } else if (ttype === 'tf') {
         if (editorQ) editorQ.setData(c.question_raw || ''); else qEl.value = c.question_raw || '';
         let data = null;
@@ -732,6 +775,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         const val = !!(data && data.value);
         const radio = document.querySelector(`input[name="tf"][value="${val ? 'true':'false'}"]`);
         if (radio) radio.checked = true;
+        // טען הערות
+        const tfNotesEl = document.getElementById('tfNotes');
+        if (tfNotesEl && data && data.notes) {
+          tfNotesEl.value = data.notes;
+        }
       }
       else if (ttype === 'cloze') {
   if (editorQ) editorQ.setData(c.question_raw || ''); else qEl.value = c.question_raw || '';
@@ -749,6 +797,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       }
     });
   }
+  // טען הערות
+  const clozeNotesEl = document.getElementById('clozeNotes');
+  if (clozeNotesEl && data && data.notes) {
+    clozeNotesEl.value = data.notes;
+  }
 }
       else if (ttype === 'label') {
         if (editorQ) editorQ.setData(c.question_raw || ''); else qEl.value = c.question_raw || '';
@@ -761,6 +814,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         labelItems = (data && Array.isArray(data.items)) ? data.items : [];
         ensureCanvasVisible();
         renderLabelOverlay();
+        // טען הערות
+        const labelNotesEl = document.getElementById('labelNotes');
+        if (labelNotesEl && data && data.notes) {
+          labelNotesEl.value = data.notes;
+        }
       }
 
       // טקסט הכפתור למצב עריכה
@@ -1372,11 +1430,13 @@ async function loadSubcats(cat, preselectSub = '') {
           return { text, correct };
         }).filter(o => o.text !== '');
         if (options.length === 0) return '';
-        return JSON.stringify({ type:'mc', options });
+        const notes = document.getElementById('mcNotes')?.value.trim() || '';
+        return JSON.stringify({ type:'mc', options, notes });
       }
       if (t === 'tf'){
         const val = document.querySelector('input[name="tf"]:checked')?.value === 'true';
-        return JSON.stringify({ type:'tf', value: val });
+        const notes = document.getElementById('tfNotes')?.value.trim() || '';
+        return JSON.stringify({ type:'tf', value: val, notes });
       }
       if (t === 'cloze'){
         const html = (editorQ ? editorQ.getData() : qEl.value || '');
@@ -1391,11 +1451,13 @@ async function loadSubcats(cat, preselectSub = '') {
             .filter(Boolean);
           rows.push({ id, answers });
         });
-        return JSON.stringify({ type:'cloze', blanks: rows });
+        const notes = document.getElementById('clozeNotes')?.value.trim() || '';
+        return JSON.stringify({ type:'cloze', blanks: rows, notes });
       }
       if (t === 'label'){
         const img = labelImg?.src || '';
-        return JSON.stringify({ type:'label', image: img, items: labelItems });
+        const notes = document.getElementById('labelNotes')?.value.trim() || '';
+        return JSON.stringify({ type:'label', image: img, items: labelItems, notes });
       }
       return '';
     }
@@ -1458,12 +1520,25 @@ async function loadSubcats(cat, preselectSub = '') {
       function escapeHtml(s){
         return (s || '').replace(/[&<>"]|'/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
       }
+      function cleanHtmlEntities(html) {
+        if (!html) return '';
+        return html.replace(/&nbsp;/g, ' ')
+                   .replace(/&amp;/g, '&')
+                   .replace(/&lt;/g, '<')
+                   .replace(/&gt;/g, '>')
+                   .replace(/&quot;/g, '"');
+      }
       function renderClozeQuestion(html){
         return (html || '').replace(/\{\{\s*(\d+)\s*\}\}/g, (_m, num) => `<span class="cloze-blank" data-id="${num}"><sup>${num}</sup><input type="text" inputmode="text" autocomplete="off" /></span>`);
       }
+      
+      function formatPreviewNotes(notes) {
+        if (!notes || notes.trim() === '') return '';
+        return `<div class="preview-notes" style="margin-top: 12px; padding: 10px; background: #f0f8f0; border-right: 3px solid #4CAF50; font-size: 13px; line-height: 1.4; border-radius: 4px;"><strong>💡 הערות:</strong> ${escapeHtml(notes)}</div>`;
+      }
 
       // Build a test-like card structure (static revealed view)
-      let qHtml = (type === 'cloze') ? renderClozeQuestion(question) : question;
+      let qHtml = (type === 'cloze') ? renderClozeQuestion(cleanHtmlEntities(question)) : cleanHtmlEntities(question);
       let body = `
         <div class="qa-container test-deck">
           <div class="test-card" tabindex="0" aria-live="polite">
@@ -1477,23 +1552,34 @@ async function loadSubcats(cat, preselectSub = '') {
         // Show the answer directly, revealed
         body += `
               <div class="free-interaction">
-                <div class="answer-display ck-content">${answer || ''}</div>
+                <div class="answer-display ck-content">${cleanHtmlEntities(answer || '')}</div>
               </div>
         `;
       } else if (type === 'mc') {
         // Render options and mark the correct one(s)
         let options = [];
-        try { options = (JSON.parse(answer||'{}').options) || []; } catch(e) { options = []; }
+        let notes = '';
+        try { 
+          const answerData = JSON.parse(answer||'{}');
+          options = answerData.options || [];
+          notes = answerData.notes || '';
+        } catch(e) { options = []; }
         const optsHtml = options.map(o => `<div class="mc-option ${o.correct ? 'correct' : ''}">${escapeHtml(o.text||'')}</div>`).join('');
         body += `
               <div class="mc-interaction">
                 <div class="mc-options">${optsHtml}</div>
-                <div class="result-display result-correct">התשובה הנכונה מסומנת בירוק</div>
+                <div class="result-display result-correct">התשובה הנכונה מסומנת בירוק${formatPreviewNotes(notes)}</div>
               </div>
         `;
       } else if (type === 'tf') {
         // Highlight the correct choice in green
-        let correctVal = true; try { const j = JSON.parse(answer||'{}'); correctVal = !!j.value; } catch(e) {}
+        let correctVal = true;
+        let notes = '';
+        try { 
+          const j = JSON.parse(answer||'{}'); 
+          correctVal = !!j.value;
+          notes = j.notes || '';
+        } catch(e) {}
         const tTrueClass = correctVal ? 'tf-option result-correct' : 'tf-option';
         const tFalseClass = !correctVal ? 'tf-option result-correct' : 'tf-option';
         body += `
@@ -1502,14 +1588,16 @@ async function loadSubcats(cat, preselectSub = '') {
                   <button class="btn ${tTrueClass}">נכון</button>
                   <button class="btn ${tFalseClass}">לא נכון</button>
                 </div>
-                <div class="result-display result-correct">זו התשובה הנכונה</div>
+                <div class="result-display result-correct">זו התשובה הנכונה${formatPreviewNotes(notes)}</div>
               </div>
         `;
       } else if (type === 'cloze') {
         // Build full revealed answer by replacing tokens with the first correct answer
         let correctAnswers = {};
+        let notes = '';
         try {
           const ans = JSON.parse(answer||'{}');
+          notes = ans.notes || '';
           if (ans && Array.isArray(ans.blanks)) {
             ans.blanks.forEach(b=>{ if (b && b.id != null) correctAnswers[b.id] = (b.answers||[])[0] || ''; });
           }
@@ -1525,7 +1613,7 @@ async function loadSubcats(cat, preselectSub = '') {
               <div class="cloze-interaction">
                 <div class="result-display result-correct">
                   <div style="margin-bottom:8px;"><strong>התשובה המלאה:</strong></div>
-                  <div class="ck-content" style="text-align:right;">${full}</div>
+                  <div class="ck-content" style="text-align:right;">${full}</div>${formatPreviewNotes(notes)}
                 </div>
               </div>
         `;
@@ -1536,6 +1624,7 @@ async function loadSubcats(cat, preselectSub = '') {
         
         const imageUrl = labelData.image || '';
         const items = labelData.items || [];
+        const notes = labelData.notes || '';
         
         if (!imageUrl) {
           body += `<div><em>יש להוסיף תמונה כדי לראות תצוגה מקדימה</em></div>`;
@@ -1565,7 +1654,7 @@ async function loadSubcats(cat, preselectSub = '') {
                   </div>
                 </div>
                 <div class="result-display result-correct" style="margin-top:12px;">
-                  תצוגת כל התשובות הנכונות
+                  תצוגת כל התשובות הנכונות${formatPreviewNotes(notes)}
                 </div>
               </div>
           `;

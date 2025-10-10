@@ -165,7 +165,7 @@
         timer=setTimeout(disarm,3000); 
         return; 
       }
-      const res = await postJSON('<?= url('subcats/delete') ?>', { category:'<?= $page->slug() ?>', slug });
+      const res = await postJSON('<?= url('subcats/delete') ?>', { category:'<?= $page->slug() ?>', slug: slug });
       if(!res.ok){ alert('שגיאה: '+(res.error||'')); disarm(); return; }
       row.remove();
     });

@@ -1,0 +1,41 @@
+Title: שאלה לדוגמה
+
+----
+
+Type: mc
+
+----
+
+Question: <h1>שאלה לדוגמה</h1>
+
+----
+
+Answer: {"type":"mc","options":[{"text":"הקקי של רז","correct":true},{"text":"השלשול של פפר","correct":false},{"text":"הפוק של עלמה","correct":false},{"text":"הירוק של הפשפש","correct":false}],"notes":"כאן יש הערות בשביל להשכיל עוד יותר"}
+
+----
+
+Difficulty: medium
+
+----
+
+Tags: 
+
+----
+
+Notes: 
+
+----
+
+Box: 3
+
+----
+
+Seen: 0
+
+----
+
+Correct: 0
+
+----
+
+Uuid: 8pays388x92lqueg
